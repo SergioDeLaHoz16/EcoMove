@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Play, MapPin, User, Bike } from 'lucide-react';
-import { UsuarioController } from '../controllers/UsuarioController.js';
-import { EstacionController } from '../controllers/EstacionController.js';
-import { TransporteController } from '../controllers/TransporteController.js';
+import { UsuarioController } from '../../controllers/UsuarioController.js';
+import { EstacionController } from '../../controllers/EstacionController.js';
+import { TransporteController } from '../../controllers/TransporteController.js';
 
 export function PrestamoForm({ onSubmit, onCancel }) {
   const [formData, setFormData] = useState({

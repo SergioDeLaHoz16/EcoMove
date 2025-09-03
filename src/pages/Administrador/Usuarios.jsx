@@ -1,91 +1,90 @@
-import React, { useState, useEffect } from 'react';
-import { Users, Edit2, Trash2, Plus } from 'lucide-react';
-import { UsuarioController } from '../controllers/UsuarioController.js';
-import { UsuarioForm } from '../components/UsuarioForm.jsx';
+"use client"
 
-export function Usuarios() {
-  const [usuarios, setUsuarios] = useState([]);
-  const [mostrarFormulario, setMostrarFormulario] = useState(false);
-  const [usuarioEditando, setUsuarioEditando] = useState(null);
-  const [mensaje, setMensaje] = useState({ tipo: '', texto: '' });
+import { useState, useEffect } from "react"
+import { Users, Edit2, Trash2, Plus } from "lucide-react"
+import { UsuarioController } from "../../controllers/UsuarioController.js"
+import { UsuarioForm } from "../../components/Administrador/UsuarioForm.jsx"
+
+function Usuarios() {
+  const [usuarios, setUsuarios] = useState([])
+  const [mostrarFormulario, setMostrarFormulario] = useState(false)
+  const [usuarioEditando, setUsuarioEditando] = useState(null)
+  const [mensaje, setMensaje] = useState({ tipo: "", texto: "" })
 
   useEffect(() => {
-    cargarUsuarios();
-  }, []);
+    cargarUsuarios()
+  }, [])
 
   const cargarUsuarios = () => {
     try {
-      const todosLosUsuarios = UsuarioController.obtenerTodos();
-      setUsuarios(todosLosUsuarios);
+      const todosLosUsuarios = UsuarioController.obtenerTodos()
+      setUsuarios(todosLosUsuarios)
     } catch (error) {
-      mostrarMensaje('error', 'Error cargando usuarios');
+      mostrarMensaje("error", "Error cargando usuarios")
     }
-  };
+  }
 
   const mostrarMensaje = (tipo, texto) => {
-    setMensaje({ tipo, texto });
-    setTimeout(() => setMensaje({ tipo: '', texto: '' }), 3000);
-  };
+    setMensaje({ tipo, texto })
+    setTimeout(() => setMensaje({ tipo: "", texto: "" }), 3000)
+  }
 
   const handleCrearUsuario = (datosUsuario) => {
     try {
-      UsuarioController.crear(datosUsuario);
-      cargarUsuarios();
-      setMostrarFormulario(false);
-      mostrarMensaje('success', 'Usuario creado exitosamente');
+      UsuarioController.crear(datosUsuario)
+      cargarUsuarios()
+      setMostrarFormulario(false)
+      mostrarMensaje("success", "Usuario creado exitosamente")
     } catch (error) {
-      mostrarMensaje('error', error.message);
+      mostrarMensaje("error", error.message)
     }
-  };
+  }
 
   const handleEditarUsuario = (datosUsuario) => {
     try {
-      UsuarioController.actualizar(usuarioEditando.id, datosUsuario);
-      cargarUsuarios();
-      setUsuarioEditando(null);
-      mostrarMensaje('success', 'Usuario actualizado exitosamente');
+      UsuarioController.actualizar(usuarioEditando.id, datosUsuario)
+      cargarUsuarios()
+      setUsuarioEditando(null)
+      mostrarMensaje("success", "Usuario actualizado exitosamente")
     } catch (error) {
-      mostrarMensaje('error', error.message);
+      mostrarMensaje("error", error.message)
     }
-  };
+  }
 
   const handleEliminarUsuario = (id) => {
-    if (window.confirm('¿Está seguro de eliminar este usuario?')) {
+    if (window.confirm("¿Está seguro de eliminar este usuario?")) {
       try {
-        UsuarioController.eliminar(id);
-        cargarUsuarios();
-        mostrarMensaje('success', 'Usuario eliminado exitosamente');
+        UsuarioController.eliminar(id)
+        cargarUsuarios()
+        mostrarMensaje("success", "Usuario eliminado exitosamente")
       } catch (error) {
-        mostrarMensaje('error', error.message);
+        mostrarMensaje("error", error.message)
       }
     }
-  };
+  }
 
   const formatearFecha = (fechaISO) => {
-    return new Date(fechaISO).toLocaleDateString('es-ES');
-  };
+    return new Date(fechaISO).toLocaleDateString("es-ES")
+  }
 
   if (mostrarFormulario) {
     return (
       <div>
-        <UsuarioForm 
-          onSubmit={handleCrearUsuario}
-          onCancel={() => setMostrarFormulario(false)}
-        />
+        <UsuarioForm onSubmit={handleCrearUsuario} onCancel={() => setMostrarFormulario(false)} />
       </div>
-    );
+    )
   }
 
   if (usuarioEditando) {
     return (
       <div>
-        <UsuarioForm 
+        <UsuarioForm
           usuario={usuarioEditando}
           onSubmit={handleEditarUsuario}
           onCancel={() => setUsuarioEditando(null)}
         />
       </div>
-    );
+    )
   }
 
   return (
@@ -98,7 +97,7 @@ export function Usuarios() {
             <p className="text-gray-600">Administrar usuarios del sistema EcoMove</p>
           </div>
         </div>
-        
+
         <button
           onClick={() => setMostrarFormulario(true)}
           className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200"
@@ -109,11 +108,13 @@ export function Usuarios() {
       </div>
 
       {mensaje.texto && (
-        <div className={`p-4 rounded-lg ${
-          mensaje.tipo === 'success' 
-            ? 'bg-green-50 border border-green-200 text-green-700' 
-            : 'bg-red-50 border border-red-200 text-red-700'
-        }`}>
+        <div
+          className={`p-4 rounded-lg ${
+            mensaje.tipo === "success"
+              ? "bg-green-50 border border-green-200 text-green-700"
+              : "bg-red-50 border border-red-200 text-red-700"
+          }`}
+        >
           {mensaje.texto}
         </div>
       )}
@@ -157,28 +158,22 @@ export function Usuarios() {
                   <tr key={usuario.id} className="hover:bg-gray-50 transition-colors">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div>
-                        <div className="text-sm font-medium text-gray-900">
-                          {usuario.nombre}
-                        </div>
-                        <div className="text-sm text-gray-500">
-                          {usuario.email}
-                        </div>
+                        <div className="text-sm font-medium text-gray-900">{usuario.nombre}</div>
+                        <div className="text-sm text-gray-500">{usuario.email}</div>
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {usuario.documento}
-                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{usuario.documento}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       {formatearFecha(usuario.fechaRegistro)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center gap-2">
-                        <span className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${
-                          usuario.activo 
-                            ? 'bg-green-100 text-green-800' 
-                            : 'bg-gray-100 text-gray-800'
-                        }`}>
-                          {usuario.activo ? 'Activo' : 'Inactivo'}
+                        <span
+                          className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${
+                            usuario.activo ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"
+                          }`}
+                        >
+                          {usuario.activo ? "Activo" : "Inactivo"}
                         </span>
                         {usuario.tienePrestamosActivos() && (
                           <span className="inline-flex px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
@@ -200,7 +195,11 @@ export function Usuarios() {
                           onClick={() => handleEliminarUsuario(usuario.id)}
                           disabled={usuario.tienePrestamosActivos()}
                           className="text-red-600 hover:text-red-900 disabled:text-gray-400 disabled:cursor-not-allowed p-1 rounded hover:bg-red-50 transition-colors"
-                          title={usuario.tienePrestamosActivos() ? 'No se puede eliminar: tiene préstamos activos' : 'Eliminar usuario'}
+                          title={
+                            usuario.tienePrestamosActivos()
+                              ? "No se puede eliminar: tiene préstamos activos"
+                              : "Eliminar usuario"
+                          }
                         >
                           <Trash2 className="h-4 w-4" />
                         </button>
@@ -214,5 +213,8 @@ export function Usuarios() {
         )}
       </div>
     </div>
-  );
+  )
 }
+
+export default Usuarios
+  

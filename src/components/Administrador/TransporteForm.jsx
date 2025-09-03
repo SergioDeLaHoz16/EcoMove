@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Bike, Zap, Car, Hash } from 'lucide-react';
-import { EstacionController } from '../controllers/EstacionController.js';
-import { TransportFactory } from '../services/TransportFactory.js';
+import { EstacionController } from '../../controllers/EstacionController.js';
+import { TransportFactory } from '../../services/TransportFactory.js';
 
 export function TransporteForm({ onSubmit, transporte = null, onCancel }) {
   const [formData, setFormData] = useState({

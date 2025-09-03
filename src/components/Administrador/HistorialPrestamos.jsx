@@ -1,80 +1,87 @@
-import React, { useState, useEffect } from 'react';
-import { History, User, MapPin, Clock, Euro, Calendar } from 'lucide-react';
-import { PrestamoController } from '../controllers/PrestamoController.js';
-import { UsuarioController } from '../controllers/UsuarioController.js';
-import { EstacionController } from '../controllers/EstacionController.js';
-import { TransporteController } from '../controllers/TransporteController.js';
+"use client"
+
+import { useState, useEffect } from "react"
+import { History, User, MapPin, Clock, Euro, Calendar } from "lucide-react"
+import { PrestamoController } from "../../controllers/PrestamoController.js"
+import { UsuarioController } from "../../controllers/UsuarioController.js"
+import { EstacionController } from "../../controllers/EstacionController.js"
+import { TransporteController } from "../../controllers/TransporteController.js"
 
 export function HistorialPrestamos({ usuarioId = null }) {
-  const [prestamos, setPrestamos] = useState([]);
-  const [usuarios, setUsuarios] = useState([]);
-  const [estaciones, setEstaciones] = useState([]);
-  const [transportes, setTransportes] = useState([]);
-  const [filtroUsuario, setFiltroUsuario] = useState(usuarioId || '');
+  const [prestamos, setPrestamos] = useState([])
+  const [usuarios, setUsuarios] = useState([])
+  const [estaciones, setEstaciones] = useState([])
+  const [transportes, setTransportes] = useState([])
+  const [filtroUsuario, setFiltroUsuario] = useState(usuarioId || "")
+  const [errors, setErrors] = useState([])
 
   useEffect(() => {
-    cargarDatos();
-  }, [filtroUsuario]);
+    cargarDatos()
+  }, [filtroUsuario])
 
   const cargarDatos = () => {
     try {
-      const historial = filtroUsuario 
+      const historial = filtroUsuario
         ? PrestamoController.obtenerHistorial(filtroUsuario)
-        : PrestamoController.obtenerHistorial();
-      
-      setPrestamos(historial);
-      setUsuarios(UsuarioController.obtenerTodos());
-      setEstaciones(EstacionController.obtenerTodas());
-      setTransportes(TransporteController.obtenerTodos());
+        : PrestamoController.obtenerHistorial()
+
+      setPrestamos(historial)
+      setUsuarios(UsuarioController.obtenerTodos())
+      setEstaciones(EstacionController.obtenerTodas())
+      setTransportes(TransporteController.obtenerTodos())
+      setErrors([])
     } catch (error) {
-      console.error('Error cargando historial:', error);
+      console.error("Error cargando historial:", error)
+      setErrors([error.message || "Error cargando datos"])
     }
-  };
+  }
 
   const obtenerNombreUsuario = (usuarioId) => {
-    const usuario = usuarios.find(u => u.id === usuarioId);
-    return usuario ? usuario.nombre : 'Usuario no encontrado';
-  };
+    const usuario = usuarios.find((u) => u.id === usuarioId)
+    return usuario ? usuario.nombre : "Usuario no encontrado"
+  }
 
   const obtenerNombreEstacion = (estacionId) => {
-    const estacion = estaciones.find(e => e.id === estacionId);
-    return estacion ? estacion.nombre : 'Estación no encontrada';
-  };
+    const estacion = estaciones.find((e) => e.id === estacionId)
+    return estacion ? estacion.nombre : "Estación no encontrada"
+  }
 
   const obtenerCodigoTransporte = (transporteId) => {
-    const transporte = transportes.find(t => t.id === transporteId);
-    return transporte ? `${transporte.codigo} (${transporte.tipo})` : 'Transporte no encontrado';
-  };
+    const transporte = transportes.find((t) => t.id === transporteId)
+    return transporte ? `${transporte.codigo} (${transporte.tipo})` : "Transporte no encontrado"
+  }
 
   const formatearFecha = (fechaISO) => {
-    return new Date(fechaISO).toLocaleString('es-ES', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
+    return new Date(fechaISO).toLocaleString("es-ES", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    })
+  }
 
   const getTransporteIcon = (transporteId) => {
-    const transporte = transportes.find(t => t.id === transporteId);
-    if (!transporte) return '🚲';
-    
+    const transporte = transportes.find((t) => t.id === transporteId)
+    if (!transporte) return "🚲"
+
     switch (transporte.tipo) {
-      case 'bicicleta': return '🚲';
-      case 'scooter': return '🛴';
-      case 'auto_electrico': return '🚗';
-      default: return '🚲';
+      case "bicicleta":
+        return "🚲"
+      case "scooter":
+        return "🛴"
+      case "auto_electrico":
+        return "🚗"
+      default:
+        return "🚲"
     }
-  };
+  }
 
   return (
     <div className="bg-white rounded-lg shadow-md p-6">
       <div className="flex items-center gap-3 mb-6">
         <History className="h-6 w-6 text-purple-600" />
-        <h2 className="text-xl font-semibold text-gray-800">
-          Historial de Préstamos
-        </h2>
+        <h2 className="text-xl font-semibold text-gray-800">Historial de Préstamos</h2>
       </div>
 
       {!usuarioId && (
@@ -89,7 +96,7 @@ export function HistorialPrestamos({ usuarioId = null }) {
             className="w-full md:w-1/2 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors"
           >
             <option value="">Todos los usuarios</option>
-            {usuarios.map(usuario => (
+            {usuarios.map((usuario) => (
               <option key={usuario.id} value={usuario.id}>
                 {usuario.nombre} - {usuario.email}
               </option>
@@ -105,32 +112,28 @@ export function HistorialPrestamos({ usuarioId = null }) {
         </div>
       ) : (
         <div className="space-y-4">
-          {prestamos.map(prestamo => (
+          {prestamos.map((prestamo) => (
             <div key={prestamo.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
               <div className="flex items-start justify-between mb-3">
                 <div className="flex items-center gap-2">
                   <span className="text-2xl">{getTransporteIcon(prestamo.transporteId)}</span>
                   <div>
-                    <h3 className="font-medium text-gray-800">
-                      {obtenerCodigoTransporte(prestamo.transporteId)}
-                    </h3>
-                    <p className="text-sm text-gray-600">
-                      {obtenerNombreUsuario(prestamo.usuarioId)}
-                    </p>
+                    <h3 className="font-medium text-gray-800">{obtenerCodigoTransporte(prestamo.transporteId)}</h3>
+                    <p className="text-sm text-gray-600">{obtenerNombreUsuario(prestamo.usuarioId)}</p>
                   </div>
                 </div>
-                
+
                 <div className="text-right">
                   <div className="flex items-center gap-1 text-green-600 font-semibold">
                     <Euro className="h-4 w-4" />
-                    {prestamo.tarifaCalculada?.toFixed(2) || '0.00'}
+                    {prestamo.tarifaCalculada?.toFixed(2) || "0.00"}
                   </div>
-                  <div className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${
-                    prestamo.pagado 
-                      ? 'bg-green-100 text-green-800' 
-                      : 'bg-yellow-100 text-yellow-800'
-                  }`}>
-                    {prestamo.pagado ? 'Pagado' : 'Pendiente'}
+                  <div
+                    className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${
+                      prestamo.pagado ? "bg-green-100 text-green-800" : "bg-yellow-100 text-yellow-800"
+                    }`}
+                  >
+                    {prestamo.pagado ? "Pagado" : "Pendiente"}
                   </div>
                 </div>
               </div>
@@ -142,21 +145,21 @@ export function HistorialPrestamos({ usuarioId = null }) {
                     <strong>Origen:</strong> {obtenerNombreEstacion(prestamo.estacionOrigenId)}
                   </span>
                 </div>
-                
+
                 <div className="flex items-center gap-2">
                   <MapPin className="h-4 w-4" />
                   <span>
                     <strong>Destino:</strong> {obtenerNombreEstacion(prestamo.estacionDestinoId)}
                   </span>
                 </div>
-                
+
                 <div className="flex items-center gap-2">
                   <Calendar className="h-4 w-4" />
                   <span>
                     <strong>Inicio:</strong> {formatearFecha(prestamo.fechaInicio)}
                   </span>
                 </div>
-                
+
                 <div className="flex items-center gap-2">
                   <Clock className="h-4 w-4" />
                   <span>
@@ -179,5 +182,5 @@ export function HistorialPrestamos({ usuarioId = null }) {
         </div>
       )}
     </div>
-  );
+  )
 }

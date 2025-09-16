@@ -1,17 +1,5 @@
 
-
 "use client"
-// import { useState } from "react"
-// import { LayoutDashboard, Users, MapPin, Bike, Play, BarChart3 } from "lucide-react"
-// import AdminSidebar from "./AdminSidebar"
-// import AdminHeader from "./AdminHeader"
-// import Dashboard from "../../pages/Administrador/Dashboard"
-// import Usuarios from "../../pages/Administrador/Usuarios"
-// import Estaciones from "../../pages/Administrador/Estaciones"
-// import Transportes from "../../pages/Administrador/Transportes"
-// import Prestamos from "../../pages/Administrador/Prestamos"
-// import { Historial } from "../../pages/Administrador/Historial"
-// import { useAuth } from "../../contexts/AuthContext"
 
 import { useState } from "react"
 import { LayoutDashboard, Users, MapPin, Bike, Play, BarChart3, CreditCard } from "lucide-react"

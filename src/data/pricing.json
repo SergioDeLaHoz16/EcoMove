@@ -1,0 +1,82 @@
+{
+  "vehicleTypes": {
+    "bicicleta": {
+      "name": "Bicicleta Eléctrica",
+      "hourly": 8000.0,
+      "daily": 45000.0,
+      "weeklyDiscount": 0.15,
+      "monthlyDiscount": 0.25,
+      "overtimeMultiplier": 1.5,
+      "currency": "COP",
+      "symbol": "$",
+      "available": true
+    },
+    "scooter": {
+      "name": "Scooter Eléctrico",
+      "hourly": 12000.0,
+      "daily": 65000.0,
+      "weeklyDiscount": 0.15,
+      "monthlyDiscount": 0.25,
+      "overtimeMultiplier": 1.5,
+      "currency": "COP",
+      "symbol": "$",
+      "available": true
+    },
+    "patineta": {
+      "name": "Patineta Eléctrica",
+      "hourly": 10000.0,
+      "daily": 55000.0,
+      "weeklyDiscount": 0.15,
+      "monthlyDiscount": 0.25,
+      "overtimeMultiplier": 1.5,
+      "currency": "COP",
+      "symbol": "$",
+      "available": true
+    },
+    "moto": {
+      "name": "Moto Eléctrica",
+      "hourly": 15000.0,
+      "daily": 85000.0,
+      "weeklyDiscount": 0.15,
+      "monthlyDiscount": 0.25,
+      "overtimeMultiplier": 1.5,
+      "currency": "COP",
+      "symbol": "$",
+      "available": true
+    },
+    "auto": {
+      "name": "Auto Eléctrico",
+      "hourly": 25000.0,
+      "daily": 150000.0,
+      "weeklyDiscount": 0.15,
+      "monthlyDiscount": 0.25,
+      "overtimeMultiplier": 1.5,
+      "currency": "COP",
+      "symbol": "$",
+      "available": true
+    },
+    "skateboard": {
+      "name": "Skateboard Eléctrico",
+      "hourly": 7000.0,
+      "daily": 40000.0,
+      "weeklyDiscount": 0.15,
+      "monthlyDiscount": 0.25,
+      "overtimeMultiplier": 1.5,
+      "currency": "COP",
+      "symbol": "$",
+      "available": true
+    }
+  },
+  "fees": {
+    "lateFee": 5000.0,
+    "damageFee": 100000.0,
+    "cleaningFee": 15000.0,
+    "processingFee": 3000.0
+  },
+  "discounts": {
+    "student": 0.1,
+    "senior": 0.15,
+    "frequent": 0.05,
+    "firstTime": 0.2
+  }
+}

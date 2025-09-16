@@ -1,0 +1,33 @@
+{
+  "rentalTypes": {
+    "hourly": {
+      "name": "Por Hora",
+      "description": "Ideal para trayectos cortos",
+      "icon": "Clock",
+      "minDuration": 1,
+      "maxDuration": 24,
+      "unit": "horas"
+    },
+    "daily": {
+      "name": "Por Día",
+      "description": "Mejor precio para uso prolongado",
+      "icon": "Calendar",
+      "minDuration": 1,
+      "maxDuration": 30,
+      "unit": "días"
+    }
+  },
+  "businessRules": {
+    "advanceBookingHours": 2,
+    "maxBookingDays": 30,
+    "cancellationHours": 1,
+    "graceMinutes": 15,
+    "overtimeWarningMinutes": 30
+  },
+  "notifications": {
+    "overtimeWarning": "Si no devuelves el vehículo a la hora estimada, el precio seguirá incrementándose automáticamente hasta que completes la devolución.",
+    "stationUnavailable": "Esta estación no está disponible actualmente",
+    "vehicleUnavailable": "Este vehículo no está disponible actualmente",
+    "loginRequired": "Debes iniciar sesión para continuar con el alquiler"
+  }
+}

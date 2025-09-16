@@ -1,0 +1,95 @@
+{
+  "stations": [
+    {
+      "id": 1,
+      "name": "Estación Centro",
+      "address": "Av. Principal 123",
+      "coordinates": {
+        "lat": -12.0464,
+        "lng": -77.0428
+      },
+      "available": true,
+      "distance": "0.5 km",
+      "capacity": 20,
+      "currentVehicles": 15,
+      "amenities": ["parking", "charging", "security"],
+      "operatingHours": {
+        "open": "06:00",
+        "close": "22:00"
+      }
+    },
+    {
+      "id": 2,
+      "name": "Estación Norte",
+      "address": "Calle Norte 456",
+      "coordinates": {
+        "lat": -12.0364,
+        "lng": -77.0328
+      },
+      "available": true,
+      "distance": "1.2 km",
+      "capacity": 15,
+      "currentVehicles": 8,
+      "amenities": ["parking", "charging"],
+      "operatingHours": {
+        "open": "06:00",
+        "close": "22:00"
+      }
+    },
+    {
+      "id": 3,
+      "name": "Estación Sur",
+      "address": "Av. Sur 789",
+      "coordinates": {
+        "lat": -12.0564,
+        "lng": -77.0528
+      },
+      "available": true,
+      "distance": "0.8 km",
+      "capacity": 25,
+      "currentVehicles": 20,
+      "amenities": ["parking", "charging", "security", "maintenance"],
+      "operatingHours": {
+        "open": "05:30",
+        "close": "23:00"
+      }
+    },
+    {
+      "id": 4,
+      "name": "Estación Este",
+      "address": "Blvd. Este 321",
+      "coordinates": {
+        "lat": -12.0464,
+        "lng": -77.0228
+      },
+      "available": false,
+      "distance": "2.1 km",
+      "capacity": 18,
+      "currentVehicles": 0,
+      "amenities": ["parking"],
+      "operatingHours": {
+        "open": "07:00",
+        "close": "21:00"
+      },
+      "maintenanceReason": "Mantenimiento programado"
+    },
+    {
+      "id": 5,
+      "name": "Estación Oeste",
+      "address": "Calle Oeste 654",
+      "coordinates": {
+        "lat": -12.0464,
+        "lng": -77.0628
+      },
+      "available": true,
+      "distance": "1.5 km",
+      "capacity": 12,
+      "currentVehicles": 7,
+      "amenities": ["parking", "charging", "security"],
+      "operatingHours": {
+        "open": "06:30",
+        "close": "21:30"
+      }
+    }
+  ]
+}

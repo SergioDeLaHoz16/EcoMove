@@ -1,19 +1,20 @@
 "use client"
 
 import { useState, lazy, Suspense } from "react"
-import Homepage from "./pages/Home/HomePage"
-import AdminLayout from "./components/Admin/AdminLayout"
-import LoginPage from "./components/Auth/LoginPage"
-import RegisterPage from "./components/Auth/RegisterPage"
+import { RentalCartProvider } from "../src/contexts/RentalCartContext.jsx"
+import Homepage from "../src/pages/Home/HomePage"
+import AdminLayout from "../src/components/Admin/AdminLayout"
+import LoginPage from "../src/components/Auth/LoginPage"
+import RegisterPage from "../src/components/Auth/RegisterPage"
 import { Users, MapPin, Bike, FileText, BarChart3, Settings } from "lucide-react"
 
-const Dashboard = lazy(() => import("./pages/Administrador/Dashboard"))
-const Usuarios = lazy(() => import("./pages/Administrador/Usuarios"))
-const Estaciones = lazy(() => import("./pages/Administrador/Estaciones"))
-const Transportes = lazy(() => import("./pages/Administrador/Transportes"))
-const Prestamos = lazy(() => import("./pages/Administrador/Prestamos"))
+const Dashboard = lazy(() => import("../src/pages/Administrador/Dashboard"))
+const Usuarios = lazy(() => import("../src/pages/Administrador/Usuarios"))
+const Estaciones = lazy(() => import("../src/pages/Administrador/Estaciones"))
+const Transportes = lazy(() => import("../src/pages/Administrador/Transportes"))
+const Prestamos = lazy(() => import("../src/pages/Administrador/Prestamos"))
 
-function App() {
+export default function Page() {
   const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [currentView, setCurrentView] = useState("home") // 'home', 'login', 'register'
   const [paginaActiva, setPaginaActiva] = useState("dashboard")
@@ -112,32 +113,40 @@ function App() {
     }
   }
 
-  if (isLoggedIn) {
-    console.log("[v0] Rendering AdminLayout")
-    return (
-      <AdminLayout
-        navegacion={navegacion}
-        paginaActiva={paginaActiva}
-        setPaginaActiva={setPaginaActiva}
-        onLogout={handleLogout}
-      >
-        {renderAdminContent()}
-      </AdminLayout>
-    )
-  }
+  return (
+    <RentalCartProvider>
+      {(() => {
+        if (isLoggedIn) {
+          console.log("[v0] Rendering AdminLayout")
+          return (
+            <AdminLayout
+              navegacion={navegacion}
+              paginaActiva={paginaActiva}
+              setPaginaActiva={setPaginaActiva}
+              onLogout={handleLogout}
+            >
+              {renderAdminContent()}
+            </AdminLayout>
+          )
+        }
 
-  if (currentView === "login") {
-    console.log("[v0] Rendering LoginPage")
-    return <LoginPage onClose={handleCloseAuth} onLogin={handleLogin} onSwitchToRegister={handleSwitchToRegister} />
-  }
+        if (currentView === "login") {
+          console.log("[v0] Rendering LoginPage")
+          return (
+            <LoginPage onClose={handleCloseAuth} onLogin={handleLogin} onSwitchToRegister={handleSwitchToRegister} />
+          )
+        }
 
-  if (currentView === "register") {
-    console.log("[v0] Rendering RegisterPage")
-    return <RegisterPage onClose={handleCloseAuth} onRegister={handleRegister} onSwitchToLogin={handleSwitchToLogin} />
-  }
+        if (currentView === "register") {
+          console.log("[v0] Rendering RegisterPage")
+          return (
+            <RegisterPage onClose={handleCloseAuth} onRegister={handleRegister} onSwitchToLogin={handleSwitchToLogin} />
+          )
+        }
 
-  console.log("[v0] Rendering Homepage")
-  return <Homepage onLoginClick={handleLoginClick} onRegisterClick={handleRegisterClick} />
+        console.log("[v0] Rendering Homepage")
+        return <Homepage onLoginClick={handleLoginClick} onRegisterClick={handleRegisterClick} />
+      })()}
+    </RentalCartProvider>
+  )
 }
-
-export default App

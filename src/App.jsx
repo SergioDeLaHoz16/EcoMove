@@ -1,7 +1,8 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { AuthProvider, useAuth } from "../src/contexts/AuthContext"
+import { InitialDataService } from "../src/services/InitialDataService"
 
 import Header from "../src/components/HomePage/Header"
 import HeroSection from "../src/components/HomePage/HeroSection"
@@ -14,10 +15,19 @@ import { RentalCartProvider } from "../src/contexts/RentalCartContext"
 import AuthModal from "./components/Auth/AuthModal"
 import UserDashboard from "./pages/User/UserDashboard"
 import AdminLayout from "./components/Admin/AdminLayout"
+
 function AppContent() {
   const [showAuthModal, setShowAuthModal] = useState(false)
   const [authMode, setAuthMode] = useState("login")
   const { user, isAuthenticated } = useAuth()
+
+  useEffect(() => {
+    try {
+      InitialDataService.initializeData()
+    } catch (error) {
+      console.error("Error initializing app data:", error)
+    }
+  }, [])
 
   const handleLoginClick = () => {
     setAuthMode("login")

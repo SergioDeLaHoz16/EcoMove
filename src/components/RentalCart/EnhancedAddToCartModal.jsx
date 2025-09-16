@@ -33,9 +33,8 @@ const EnhancedAddToCartModal = ({ isOpen, onClose, vehicle, onLoginRequired }) =
         const allStations = EstacionController.obtenerTodas()
         const allTransports = TransporteController.obtenerTodos()
 
-        // Filter available transports by vehicle type
         const filteredTransports = allTransports.filter(
-          (transport) => transport.tipo === vehicle?.tipo && transport.estado === "activo",
+          (transport) => transport.tipo === vehicle?.tipo && transport.estado === "operativo" && transport.disponible,
         )
 
         setStations(allStations)
@@ -45,6 +44,35 @@ const EnhancedAddToCartModal = ({ isOpen, onClose, vehicle, onLoginRequired }) =
       }
     }
   }, [isOpen, vehicle?.tipo])
+
+  useEffect(() => {
+    if (selectedStartStation && vehicle?.tipo) {
+      try {
+        const stationTransports = TransporteController.obtenerDisponiblesPorEstacion(selectedStartStation)
+        const filteredByType = stationTransports.filter((transport) => transport.tipo === vehicle.tipo)
+        setAvailableTransports(filteredByType)
+
+        // Reset selected transport if it's not available in the new station
+        if (selectedTransport && !filteredByType.find((t) => t.id === selectedTransport)) {
+          setSelectedTransport("")
+        }
+      } catch (error) {
+        console.error("Error loading station transports:", error)
+        setAvailableTransports([])
+      }
+    } else if (!selectedStartStation) {
+      // If no station selected, show all available transports of the type
+      try {
+        const allTransports = TransporteController.obtenerTodos()
+        const filteredTransports = allTransports.filter(
+          (transport) => transport.tipo === vehicle?.tipo && transport.estado === "operativo" && transport.disponible,
+        )
+        setAvailableTransports(filteredTransports)
+      } catch (error) {
+        console.error("Error loading all transports:", error)
+      }
+    }
+  }, [selectedStartStation, vehicle?.tipo, selectedTransport])
 
   // helper: devuelve una cadena local YYYY-MM-DDTHH:mm (útil para input datetime-local)
   const pad = (n) => String(n).padStart(2, "0")
@@ -339,12 +367,20 @@ const EnhancedAddToCartModal = ({ isOpen, onClose, vehicle, onLoginRequired }) =
                       <option value="">Selecciona un vehículo</option>
                       {availableTransports.map((transport) => (
                         <option key={transport.id} value={transport.id}>
-                          {transport.codigo} - {transport.modelo} ({transport.año})
+                          {transport.codigo} - {transport.caracteristicas?.modelo || "Modelo"} (
+                          {transport.caracteristicas?.año || "N/A"})
                         </option>
                       ))}
                     </select>
-                    {availableTransports.length === 0 && (
-                      <p className="text-xs text-red-500 mt-1">No hay vehículos de tipo {vehicle.tipo} disponibles</p>
+                    {selectedStartStation && availableTransports.length === 0 && (
+                      <p className="text-xs text-red-500 mt-1">
+                        No hay vehículos de tipo {vehicle.tipo} disponibles en esta estación
+                      </p>
+                    )}
+                    {!selectedStartStation && availableTransports.length === 0 && (
+                      <p className="text-xs text-orange-500 mt-1">
+                        Selecciona una estación para ver vehículos disponibles
+                      </p>
                     )}
                   </div>
 

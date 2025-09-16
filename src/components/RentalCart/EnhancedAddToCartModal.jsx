@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { X, Calendar, Clock, MapPin, AlertCircle, CreditCard, Zap } from "lucide-react"
 import { useRentalCart } from "../../contexts/RentalCartContext.jsx"
 import { useRentalPricing } from "../../hooks/useRentalPricing.js"
@@ -15,7 +15,6 @@ const EnhancedAddToCartModal = ({ isOpen, onClose, vehicle, onLoginRequired }) =
   const [endDateTime, setEndDateTime] = useState("")
   const [selectedStartStation, setSelectedStartStation] = useState("")
   const [selectedEndStation, setSelectedEndStation] = useState("")
-  const [currentPrice, setCurrentPrice] = useState(0)
   const [isAnimating, setIsAnimating] = useState(false)
 
   const stations = [
@@ -26,10 +25,10 @@ const EnhancedAddToCartModal = ({ isOpen, onClose, vehicle, onLoginRequired }) =
     { id: 5, name: "Estación Oeste", address: "Calle Oeste 654", available: true, distance: "1.5 km" },
   ]
 
+  // Animación + reset cuando abre/cierra el modal
   useEffect(() => {
     if (isOpen) {
       setIsAnimating(true)
-      // Reset form when modal opens
       setRentalType("hourly")
       setDuration(1)
       setStartDateTime("")
@@ -41,6 +40,7 @@ const EnhancedAddToCartModal = ({ isOpen, onClose, vehicle, onLoginRequired }) =
     }
   }, [isOpen])
 
+  // Calcular fecha/hora de fin
   useEffect(() => {
     if (startDateTime && duration) {
       const start = new Date(startDateTime)
@@ -56,11 +56,12 @@ const EnhancedAddToCartModal = ({ isOpen, onClose, vehicle, onLoginRequired }) =
     }
   }, [startDateTime, duration, rentalType])
 
-  useEffect(() => {
+  // ✅ Precio calculado con useMemo (no con useEffect + setState)
+  const currentPrice = useMemo(() => {
     if (pricing && duration) {
-      const basePrice = calculatePrice(rentalType, duration)
-      setCurrentPrice(basePrice)
+      return calculatePrice(rentalType, duration)
     }
+    return 0
   }, [pricing, rentalType, duration, calculatePrice])
 
   const handleRentalTypeChange = (newType) => {
@@ -73,7 +74,7 @@ const EnhancedAddToCartModal = ({ isOpen, onClose, vehicle, onLoginRequired }) =
       return
     }
 
-    const isLoggedIn = localStorage.getItem("ecomove_user_token") // Mock auth check
+    const isLoggedIn = localStorage.getItem("ecomove_user_token")
     if (!isLoggedIn) {
       onLoginRequired && onLoginRequired()
       return

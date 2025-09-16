@@ -82,14 +82,25 @@ const LoginModal = ({ isOpen, onClose, onLogin }) => {
             </button>
           </form>
 
+          {/* Links inferiores */}
+          <div className="mt-6 flex justify-between text-sm text-gray-600">
+            <span>¿Olvidaste tu contraseña?</span>
+            <a
+              href="#"
+              className="text-green-600 hover:text-green-700 font-medium"
+            >
+              Recuperar
+            </a>
+          </div>
+
           <div className="mt-6 text-center">
             <p className="text-sm text-gray-600">
-              ¿Olvidaste tu contraseña?{' '}
+              ¿No tienes cuenta?{' '}
               <a
                 href="#"
                 className="text-green-600 hover:text-green-700 font-medium"
               >
-                Recuperar
+                Registrarse
               </a>
             </p>
           </div>

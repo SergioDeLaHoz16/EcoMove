@@ -25,6 +25,11 @@ const EnhancedAddToCartModal = ({ isOpen, onClose, vehicle, onLoginRequired }) =
     { id: 5, name: "Estación Oeste", address: "Calle Oeste 654", available: true, distance: "1.5 km" },
   ]
 
+  // helper: devuelve una cadena local YYYY-MM-DDTHH:mm (útil para input datetime-local)
+  const pad = (n) => String(n).padStart(2, "0")
+  const toLocalDateTimeString = (date = new Date()) =>
+    `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`
+
   // Animación + reset cuando abre/cierra el modal
   useEffect(() => {
     if (isOpen) {
@@ -40,23 +45,47 @@ const EnhancedAddToCartModal = ({ isOpen, onClose, vehicle, onLoginRequired }) =
     }
   }, [isOpen])
 
-  // Calcular fecha/hora de fin
+  // --- Calcular fecha/hora de fin correctamente (hora local) + buffer de 15 minutos ---
   useEffect(() => {
-    if (startDateTime && duration) {
-      const start = new Date(startDateTime)
-      const end = new Date(start)
-
-      if (rentalType === "hourly") {
-        end.setHours(end.getHours() + duration)
-      } else {
-        end.setDate(end.getDate() + duration)
-      }
-
-      setEndDateTime(end.toISOString().slice(0, 16))
+    if (!startDateTime || !duration) {
+      setEndDateTime("")
+      return
     }
+
+    // startDateTime proviene de <input type="datetime-local"> y tiene formato "YYYY-MM-DDTHH:mm"
+    // parsearlo como hora local para evitar conversiones UTC/zonas horarias
+    const [datePart, timePart] = startDateTime.split("T")
+    if (!datePart) {
+      setEndDateTime("")
+      return
+    }
+
+    const [year, month, day] = datePart.split("-").map((v) => parseInt(v, 10))
+    const [hour = 0, minute = 0] = (timePart ? timePart.split(":") : []).map((v) => parseInt(v, 10))
+
+    // Crear fecha local segura
+    const start = new Date(year, month - 1, day, hour || 0, minute || 0, 0, 0)
+    const end = new Date(start)
+
+    // sumar duration (horas o días)
+    if (rentalType === "hourly") {
+      end.setHours(end.getHours() + Number(duration))
+    } else {
+      end.setDate(end.getDate() + Number(duration))
+    }
+
+    // sumar buffer de 15 minutos (requerimiento)
+    end.setMinutes(end.getMinutes() + 15)
+
+    // Formatear en string compatible con datetime-local (local time)
+    const localDateTime = `${end.getFullYear()}-${pad(end.getMonth() + 1)}-${pad(end.getDate())}T${pad(
+      end.getHours()
+    )}:${pad(end.getMinutes())}`
+
+    setEndDateTime(localDateTime)
   }, [startDateTime, duration, rentalType])
 
-  // ✅ Precio calculado con useMemo (no con useEffect + setState)
+  // Precio calculado con useMemo (no con useEffect + setState)
   const currentPrice = useMemo(() => {
     if (pricing && duration) {
       return calculatePrice(rentalType, duration)
@@ -141,9 +170,7 @@ const EnhancedAddToCartModal = ({ isOpen, onClose, vehicle, onLoginRequired }) =
               <AlertCircle className="w-6 h-6 text-yellow-600 flex-shrink-0" />
               <div>
                 <p className="text-yellow-800 font-medium">Vehículo no disponible</p>
-                <p className="text-yellow-700 text-sm">
-                  {pricing?.message || "Este vehículo no está disponible actualmente"}
-                </p>
+                <p className="text-yellow-700 text-sm">{pricing?.message || "Este vehículo no está disponible actualmente"}</p>
               </div>
             </div>
           ) : (
@@ -193,7 +220,7 @@ const EnhancedAddToCartModal = ({ isOpen, onClose, vehicle, onLoginRequired }) =
                     type="datetime-local"
                     value={startDateTime}
                     onChange={(e) => setStartDateTime(e.target.value)}
-                    min={new Date().toISOString().slice(0, 16)}
+                    min={toLocalDateTimeString()} // ahora usa hora local
                     className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
                   />
                 </div>
@@ -207,12 +234,11 @@ const EnhancedAddToCartModal = ({ isOpen, onClose, vehicle, onLoginRequired }) =
                     min="1"
                     max={rentalType === "hourly" ? 24 : 30}
                     value={duration}
-                    onChange={(e) => setDuration(Number.parseInt(e.target.value) || 1)}
+                    onChange={(e) => setDuration(Number.parseInt(e.target.value, 10) || 1)}
                     className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
                   />
                 </div>
               </div>
-
               {endDateTime && (
                 <div className="bg-green-50 border border-green-200 rounded-xl p-4">
                   <div className="flex items-center space-x-2">
@@ -258,7 +284,7 @@ const EnhancedAddToCartModal = ({ isOpen, onClose, vehicle, onLoginRequired }) =
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Estación de Devolución (Opcional)
+                      Estación de Devolución
                     </label>
                     <select
                       value={selectedEndStation}
@@ -331,12 +357,12 @@ const EnhancedAddToCartModal = ({ isOpen, onClose, vehicle, onLoginRequired }) =
                 {loading ? (
                   <>
                     <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                    <span>Agregando...</span>
+                    <span>Rentando...</span>
                   </>
                 ) : (
                   <>
                     <CreditCard className="w-5 h-5" />
-                    <span>Agregar al Carrito</span>
+                    <span>Rentar Vehiculo</span>
                   </>
                 )}
               </button>

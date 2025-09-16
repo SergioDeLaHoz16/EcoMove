@@ -1,7 +1,20 @@
+
+
 "use client"
+// import { useState } from "react"
+// import { LayoutDashboard, Users, MapPin, Bike, Play, BarChart3 } from "lucide-react"
+// import AdminSidebar from "./AdminSidebar"
+// import AdminHeader from "./AdminHeader"
+// import Dashboard from "../../pages/Administrador/Dashboard"
+// import Usuarios from "../../pages/Administrador/Usuarios"
+// import Estaciones from "../../pages/Administrador/Estaciones"
+// import Transportes from "../../pages/Administrador/Transportes"
+// import Prestamos from "../../pages/Administrador/Prestamos"
+// import { Historial } from "../../pages/Administrador/Historial"
+// import { useAuth } from "../../contexts/AuthContext"
 
 import { useState } from "react"
-import { LayoutDashboard, Users, MapPin, Bike, Play, BarChart3 } from "lucide-react"
+import { LayoutDashboard, Users, MapPin, Bike, Play, BarChart3, CreditCard } from "lucide-react"
 import AdminSidebar from "./AdminSidebar"
 import AdminHeader from "./AdminHeader"
 import Dashboard from "../../pages/Administrador/Dashboard"
@@ -10,6 +23,7 @@ import Estaciones from "../../pages/Administrador/Estaciones"
 import Transportes from "../../pages/Administrador/Transportes"
 import Prestamos from "../../pages/Administrador/Prestamos"
 import { Historial } from "../../pages/Administrador/Historial"
+import PagosPendientes from "../../pages/Administrador/PagosPendientes"
 import { useAuth } from "../../contexts/AuthContext"
 
 const AdminLayout = () => {
@@ -43,6 +57,11 @@ const AdminLayout = () => {
       icono: Play,
     },
     {
+      id: "pagos-pendientes",
+      nombre: "Pagos Pendientes",
+      icono: CreditCard,
+    },
+    {
       id: "historial",
       nombre: "Historial",
       icono: BarChart3,
@@ -61,6 +80,8 @@ const AdminLayout = () => {
         return <Transportes />
       case "prestamos":
         return <Prestamos />
+      case "pagos-pendientes":
+        return <PagosPendientes />
       case "historial":
         return <Historial />
       default:

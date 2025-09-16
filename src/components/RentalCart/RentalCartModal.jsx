@@ -5,6 +5,7 @@ import { X, Clock, Calendar, MapPin, Trash2 } from "lucide-react"
 import { useRentalCart } from "../../contexts/RentalCartContext.jsx"
 import { useRentalPricing } from "../../hooks/useRentalPricing.js"
 import { useRentalTimer } from "../../hooks/useRentalTimer.js"
+import CheckoutModal from "./CheckoutModal.jsx"
 
 const RentalCartItem = ({ item, onRemove, onUpdateEndTime }) => {
   const { formatPrice } = useRentalPricing(item.vehicleType)
@@ -85,81 +86,94 @@ const RentalCartItem = ({ item, onRemove, onUpdateEndTime }) => {
 }
 
 const RentalCartModal = ({ isOpen, onClose }) => {
-  const { items, totalPrice, removeFromCart, updateItemEndTime, clearCart, startRental } = useRentalCart()
+  const { items, totalPrice, removeFromCart, updateItemEndTime, clearCart } = useRentalCart()
   const { formatPrice } = useRentalPricing("bicicleta") // Use any type for formatting
+  const [showCheckout, setShowCheckout] = useState(false)
 
-  const handleStartRental = async (item) => {
-    try {
-      await startRental(item)
-      // Show success message or redirect
-    } catch (error) {
-      console.error("Error starting rental:", error)
-    }
+  const handleStartRental = () => {
+    setShowCheckout(true)
+  }
+
+  const handleOrderComplete = (createdRentals) => {
+    // Clear cart after successful order
+    clearCart()
+    setShowCheckout(false)
+    onClose()
+
+    // Show success message
+    alert(`¡${createdRentals.length} reserva(s) creada(s) exitosamente! Revisa tu dashboard para más detalles.`)
   }
 
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-hidden">
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
-          <h2 className="text-xl font-bold text-gray-900">Carrito de Alquiler</h2>
-          <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
-            <X className="w-6 h-6" />
-          </button>
-        </div>
+    <>
+      <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+        <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-hidden">
+          <div className="flex items-center justify-between p-6 border-b border-gray-200">
+            <h2 className="text-xl font-bold text-gray-900">Carrito de Alquiler</h2>
+            <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
+              <X className="w-6 h-6" />
+            </button>
+          </div>
 
-        <div className="p-6 overflow-y-auto max-h-[60vh]">
-          {items.length === 0 ? (
-            <div className="text-center py-8">
-              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <MapPin className="w-8 h-8 text-gray-400" />
+          <div className="p-6 overflow-y-auto max-h-[60vh]">
+            {items.length === 0 ? (
+              <div className="text-center py-8">
+                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <MapPin className="w-8 h-8 text-gray-400" />
+                </div>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">Tu carrito está vacío</h3>
+                <p className="text-gray-600">Agrega vehículos para comenzar tu alquiler</p>
               </div>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">Tu carrito está vacío</h3>
-              <p className="text-gray-600">Agrega vehículos para comenzar tu alquiler</p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {items.map((item) => (
-                <RentalCartItem
-                  key={item.id}
-                  item={item}
-                  onRemove={removeFromCart}
-                  onUpdateEndTime={updateItemEndTime}
-                />
-              ))}
+            ) : (
+              <div className="space-y-4">
+                {items.map((item) => (
+                  <RentalCartItem
+                    key={item.id}
+                    item={item}
+                    onRemove={removeFromCart}
+                    onUpdateEndTime={updateItemEndTime}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+
+          {items.length > 0 && (
+            <div className="border-t border-gray-200 p-6">
+              <div className="flex items-center justify-between mb-4">
+                <span className="text-lg font-semibold text-gray-900">Total:</span>
+                <span className="text-2xl font-bold text-green-600">{formatPrice(totalPrice)}</span>
+              </div>
+
+              <div className="flex space-x-3">
+                <button
+                  onClick={clearCart}
+                  className="flex-1 bg-gray-200 text-gray-800 py-3 rounded-lg font-semibold hover:bg-gray-300 transition-colors"
+                >
+                  Limpiar Carrito
+                </button>
+                <button
+                  onClick={handleStartRental}
+                  className="flex-1 bg-green-600 text-white py-3 rounded-lg font-semibold hover:bg-green-700 transition-colors"
+                >
+                  Proceder al Checkout
+                </button>
+              </div>
             </div>
           )}
         </div>
-
-        {items.length > 0 && (
-          <div className="border-t border-gray-200 p-6">
-            <div className="flex items-center justify-between mb-4">
-              <span className="text-lg font-semibold text-gray-900">Total:</span>
-              <span className="text-2xl font-bold text-green-600">{formatPrice(totalPrice)}</span>
-            </div>
-
-            <div className="flex space-x-3">
-              <button
-                onClick={clearCart}
-                className="flex-1 bg-gray-200 text-gray-800 py-3 rounded-lg font-semibold hover:bg-gray-300 transition-colors"
-              >
-                Limpiar Carrito
-              </button>
-              <button
-                onClick={() => {
-                  // In a real app, this would process all items
-                  items.forEach((item) => handleStartRental(item))
-                }}
-                className="flex-1 bg-green-600 text-white py-3 rounded-lg font-semibold hover:bg-green-700 transition-colors"
-              >
-                Iniciar Alquiler
-              </button>
-            </div>
-          </div>
-        )}
       </div>
-    </div>
+
+      <CheckoutModal
+        isOpen={showCheckout}
+        onClose={() => setShowCheckout(false)}
+        cartItems={items}
+        totalPrice={totalPrice}
+        onOrderComplete={handleOrderComplete}
+      />
+    </>
   )
 }
 

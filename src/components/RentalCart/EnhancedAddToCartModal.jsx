@@ -5,7 +5,6 @@ import { X, Calendar, Clock, MapPin, AlertCircle, CreditCard, Zap } from "lucide
 import { useRentalCart } from "../../contexts/RentalCartContext.jsx"
 import { useRentalPricing } from "../../hooks/useRentalPricing.js"
 import { useAuth } from "../../contexts/AuthContext.jsx"
-import { PrestamoController } from "../../controllers/PrestamoController.js"
 import { EstacionController } from "../../controllers/EstacionController.js"
 import { TransporteController } from "../../controllers/TransporteController.js"
 
@@ -155,28 +154,11 @@ const EnhancedAddToCartModal = ({ isOpen, onClose, vehicle, onLoginRequired }) =
       return
     }
 
-    if (!isAuthenticated || !user) {
-      onLoginRequired && onLoginRequired()
-      return
-    }
-
     try {
       setRentalLoading(true)
       setRentalError("")
 
-      // Create rental data for PrestamoController
-      const rentalData = {
-        usuarioId: user.id,
-        transporteId: selectedTransport,
-        estacionOrigenId: selectedStartStation,
-        fechaInicio: new Date(startDateTime).toISOString(),
-        estado: "activo",
-      }
-
-      // Create the rental using PrestamoController
-      const nuevoPrestamo = PrestamoController.crear(rentalData)
-
-      // Also add to cart context for UI consistency
+      // Create cart data without creating actual rental yet
       const cartData = {
         vehicleId: vehicle.id,
         vehicleType: vehicle.tipo,
@@ -187,20 +169,21 @@ const EnhancedAddToCartModal = ({ isOpen, onClose, vehicle, onLoginRequired }) =
         duration,
         startStationId: selectedStartStation,
         endStationId: selectedEndStation,
+        transportId: selectedTransport,
         basePrice: currentPrice,
         pricePerHour: pricing?.hourly || 0,
         pricePerDay: pricing?.daily || 0,
-        prestamoId: nuevoPrestamo.id,
+        status: "pending", // Mark as pending until payment
       }
 
       await addToCart(vehicle.id, vehicle.tipo, vehicle.name, rentalType, startDateTime, endDateTime, cartData)
 
       // Show success message and close modal
-      alert(`¡Arrendamiento iniciado exitosamente! ID: ${nuevoPrestamo.id}`)
+      alert("¡Vehículo agregado al carrito! Procede al checkout para completar tu reserva.")
       onClose()
     } catch (error) {
-      console.error("Error creating rental:", error)
-      setRentalError(error.message || "Error al crear el arrendamiento")
+      console.error("Error adding to cart:", error)
+      setRentalError(error.message || "Error al agregar al carrito")
     } finally {
       setRentalLoading(false)
     }
@@ -301,7 +284,7 @@ const EnhancedAddToCartModal = ({ isOpen, onClose, vehicle, onLoginRequired }) =
                 </div>
 
                 <div className="space-y-3">
-                  <label className="block text-sm font-semibold text-gray-700">
+                  <label className="block text-sm font-medium text-gray-700">
                     Duración ({rentalType === "hourly" ? "Horas" : "Días"})
                   </label>
                   <input
@@ -457,12 +440,12 @@ const EnhancedAddToCartModal = ({ isOpen, onClose, vehicle, onLoginRequired }) =
                 {rentalLoading ? (
                   <>
                     <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                    <span>Creando arrendamiento...</span>
+                    <span>Agregando al carrito...</span>
                   </>
                 ) : (
                   <>
                     <CreditCard className="w-5 h-5" />
-                    <span>Iniciar Arrendamiento</span>
+                    <span>Agregar al Carrito</span>
                   </>
                 )}
               </button>

@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { BarChart3, Users, MapPin, Bike, Play, TrendingUp, Euro, Clock } from "lucide-react"
+import { BarChart3, Users, MapPin, Bike, Play, TrendingUp, Euro, Clock, CreditCard } from "lucide-react"
 import { PrestamoController } from "../../controllers/PrestamoController.js"
 import { UsuarioController } from "../../controllers/UsuarioController.js"
 import { EstacionController } from "../../controllers/EstacionController.js"
@@ -9,7 +9,15 @@ import { TransporteController } from "../../controllers/TransporteController.js"
 
 function Dashboard({ navegacion, setPaginaActiva }) {
   const [estadisticas, setEstadisticas] = useState({
-    prestamos: { total: 0, activos: 0, finalizados: 0, cancelados: 0, ingresoTotal: 0, duracionPromedio: 0 },
+    prestamos: {
+      total: 0,
+      activos: 0,
+      finalizados: 0,
+      cancelados: 0,
+      pendientes: 0,
+      ingresoTotal: 0,
+      duracionPromedio: 0,
+    },
     usuarios: 0,
     estaciones: 0,
     transportes: 0,
@@ -28,17 +36,21 @@ function Dashboard({ navegacion, setPaginaActiva }) {
       // Obtener estadísticas de préstamos
       const estadisticasPrestamos = PrestamoController.obtenerEstadisticas()
 
+      const todosLosPrestamos = PrestamoController.obtenerTodos()
+      const pendientes = todosLosPrestamos.filter(
+        (prestamo) => prestamo.estado === "pendiente" || (prestamo.estado === "finalizado" && !prestamo.pagado),
+      ).length
+
       // Obtener conteos de otras entidades
       const usuarios = UsuarioController.obtenerTodos()
       const estaciones = EstacionController.obtenerTodas()
       const transportes = TransporteController.obtenerTodos()
 
       // Obtener préstamos recientes (últimos 5)
-      const todosLosPrestamos = PrestamoController.obtenerTodos()
       const recientes = todosLosPrestamos.sort((a, b) => new Date(b.fechaInicio) - new Date(a.fechaInicio)).slice(0, 5)
 
       setEstadisticas({
-        prestamos: estadisticasPrestamos,
+        prestamos: { ...estadisticasPrestamos, pendientes },
         usuarios: usuarios.length,
         estaciones: estaciones.length,
         transportes: transportes.length,
@@ -80,6 +92,8 @@ function Dashboard({ navegacion, setPaginaActiva }) {
         return "bg-blue-100 text-blue-800"
       case "cancelado":
         return "bg-red-100 text-red-800"
+      case "pendiente":
+        return "bg-yellow-100 text-yellow-800"
       default:
         return "bg-gray-100 text-gray-800"
     }
@@ -127,6 +141,26 @@ function Dashboard({ navegacion, setPaginaActiva }) {
               className="text-sm text-blue-600 hover:text-blue-800 font-medium"
             >
               Ver préstamos →
+            </button>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-xl shadow-sm p-6 hover:shadow-md transition-shadow">
+          <div className="flex items-center space-x-4">
+            <div className="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
+              <CreditCard className="w-6 h-6 text-yellow-600" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-gray-600">Pagos Pendientes</p>
+              <p className="text-2xl font-bold text-gray-900">{estadisticas.prestamos.pendientes}</p>
+            </div>
+          </div>
+          <div className="mt-4">
+            <button
+              onClick={() => setPaginaActiva("pagos-pendientes")}
+              className="text-sm text-yellow-600 hover:text-yellow-800 font-medium"
+            >
+              Ver pagos →
             </button>
           </div>
         </div>
@@ -274,9 +308,9 @@ function Dashboard({ navegacion, setPaginaActiva }) {
                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${getEstadoColor(prestamo.estado)}`}>
                         {prestamo.estado}
                       </span>
-                      {prestamo.tarifaCalculada > 0 && (
+                      {(prestamo.tarifaCalculada > 0 || prestamo.precioBase > 0) && (
                         <span className="text-sm font-medium text-gray-900">
-                          €{prestamo.tarifaCalculada.toFixed(2)}
+                          €{(prestamo.tarifaCalculada || prestamo.precioBase || 0).toFixed(2)}
                         </span>
                       )}
                     </div>

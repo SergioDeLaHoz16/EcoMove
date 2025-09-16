@@ -1,6 +1,8 @@
 "use client"
 
 import { useState } from "react"
+import { AuthProvider, useAuth } from "../src/contexts/AuthContext"
+
 import Header from "../src/components/HomePage/Header"
 import HeroSection from "../src/components/HomePage/HeroSection"
 import FeaturesSection from "../src/components/HomePage/FeaturesSection"
@@ -8,49 +10,60 @@ import CategoriesSection from "../src/components/HomePage/CategorySection"
 import ServicesSection from "../src/components/HomePage/ServicesSection"
 import RentalSection from "../src/components/HomePage/RentalSection"
 import PricingSection from "../src/components/HomePage/PricingSection"
-import LoginModal from "../src/components/Auth/LoginModal"
-import { AuthProvider } from "../src/contexts/AuthContext"
 import { RentalCartProvider } from "../src/contexts/RentalCartContext"
-
-export default function Page() {
-  const [showLoginModal, setShowLoginModal] = useState(false)
-  const [showRegisterModal, setShowRegisterModal] = useState(false)
+import AuthModal from "./components/Auth/AuthModal"
+import UserDashboard from "./pages/User/UserDashboard"
+import AdminLayout from "./components/Admin/AdminLayout"
+function AppContent() {
+  const [showAuthModal, setShowAuthModal] = useState(false)
+  const [authMode, setAuthMode] = useState("login")
+  const { user, isAuthenticated } = useAuth()
 
   const handleLoginClick = () => {
-    setShowLoginModal(true)
+    setAuthMode("login")
+    setShowAuthModal(true)
   }
 
   const handleRegisterClick = () => {
-    setShowRegisterModal(true)
+    setAuthMode("register")
+    setShowAuthModal(true)
   }
 
   const handleLoginRequired = () => {
-    setShowLoginModal(true)
+    setAuthMode("login")
+    setShowAuthModal(true)
+  }
+
+  if (isAuthenticated && user) {
+    if (user.tipo === "administrador") {
+      return <AdminLayout />
+    } else {
+      return <UserDashboard user={user} />
+    }
   }
 
   return (
+    <div className="min-h-screen bg-white">
+      <Header onLoginClick={handleLoginClick} onRegisterClick={handleRegisterClick} />
+      <HeroSection />
+      <FeaturesSection />
+      <ServicesSection />
+      <RentalSection onLoginRequired={handleLoginRequired} />
+      <CategoriesSection />
+      <PricingSection />
+
+      {showAuthModal && (
+        <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} initialMode={authMode} />
+      )}
+    </div>
+  )
+}
+
+export default function Page() {
+  return (
     <AuthProvider>
       <RentalCartProvider>
-        <div className="min-h-screen bg-white">
-          <Header onLoginClick={handleLoginClick} onRegisterClick={handleRegisterClick} />
-          <HeroSection />
-          <FeaturesSection />
-          <ServicesSection />
-          <RentalSection onLoginRequired={handleLoginRequired} />
-          <CategoriesSection />
-          <PricingSection />
-
-          {showLoginModal && (
-            <LoginModal
-              isOpen={showLoginModal}
-              onClose={() => setShowLoginModal(false)}
-              onSwitchToRegister={() => {
-                setShowLoginModal(false)
-                setShowRegisterModal(true)
-              }}
-            />
-          )}
-        </div>
+        <AppContent />
       </RentalCartProvider>
     </AuthProvider>
   )

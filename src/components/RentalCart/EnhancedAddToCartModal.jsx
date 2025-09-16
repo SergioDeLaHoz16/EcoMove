@@ -4,10 +4,15 @@ import { useState, useEffect, useMemo } from "react"
 import { X, Calendar, Clock, MapPin, AlertCircle, CreditCard, Zap } from "lucide-react"
 import { useRentalCart } from "../../contexts/RentalCartContext.jsx"
 import { useRentalPricing } from "../../hooks/useRentalPricing.js"
+import { useAuth } from "../../contexts/AuthContext.jsx"
+import { PrestamoController } from "../../controllers/PrestamoController.js"
+import { EstacionController } from "../../controllers/EstacionController.js"
+import { TransporteController } from "../../controllers/TransporteController.js"
 
 const EnhancedAddToCartModal = ({ isOpen, onClose, vehicle, onLoginRequired }) => {
   const { addToCart, loading, error } = useRentalCart()
   const { pricing, isAvailable, formatPrice, calculatePrice } = useRentalPricing(vehicle?.tipo || "bicicleta")
+  const { user, isAuthenticated } = useAuth()
 
   const [rentalType, setRentalType] = useState("hourly")
   const [startDateTime, setStartDateTime] = useState("")
@@ -16,14 +21,30 @@ const EnhancedAddToCartModal = ({ isOpen, onClose, vehicle, onLoginRequired }) =
   const [selectedStartStation, setSelectedStartStation] = useState("")
   const [selectedEndStation, setSelectedEndStation] = useState("")
   const [isAnimating, setIsAnimating] = useState(false)
+  const [stations, setStations] = useState([])
+  const [availableTransports, setAvailableTransports] = useState([])
+  const [selectedTransport, setSelectedTransport] = useState("")
+  const [rentalLoading, setRentalLoading] = useState(false)
+  const [rentalError, setRentalError] = useState("")
 
-  const stations = [
-    { id: 1, name: "Estación Centro", address: "Av. Principal 123", available: true, distance: "0.5 km" },
-    { id: 2, name: "Estación Norte", address: "Calle Norte 456", available: true, distance: "1.2 km" },
-    { id: 3, name: "Estación Sur", address: "Av. Sur 789", available: true, distance: "0.8 km" },
-    { id: 4, name: "Estación Este", address: "Blvd. Este 321", available: false, distance: "2.1 km" },
-    { id: 5, name: "Estación Oeste", address: "Calle Oeste 654", available: true, distance: "1.5 km" },
-  ]
+  useEffect(() => {
+    if (isOpen) {
+      try {
+        const allStations = EstacionController.obtenerTodas()
+        const allTransports = TransporteController.obtenerTodos()
+
+        // Filter available transports by vehicle type
+        const filteredTransports = allTransports.filter(
+          (transport) => transport.tipo === vehicle?.tipo && transport.estado === "activo",
+        )
+
+        setStations(allStations)
+        setAvailableTransports(filteredTransports)
+      } catch (error) {
+        console.error("Error loading data:", error)
+      }
+    }
+  }, [isOpen, vehicle?.tipo])
 
   // helper: devuelve una cadena local YYYY-MM-DDTHH:mm (útil para input datetime-local)
   const pad = (n) => String(n).padStart(2, "0")
@@ -40,6 +61,8 @@ const EnhancedAddToCartModal = ({ isOpen, onClose, vehicle, onLoginRequired }) =
       setEndDateTime("")
       setSelectedStartStation("")
       setSelectedEndStation("")
+      setSelectedTransport("")
+      setRentalError("")
     } else {
       setIsAnimating(false)
     }
@@ -60,8 +83,8 @@ const EnhancedAddToCartModal = ({ isOpen, onClose, vehicle, onLoginRequired }) =
       return
     }
 
-    const [year, month, day] = datePart.split("-").map((v) => parseInt(v, 10))
-    const [hour = 0, minute = 0] = (timePart ? timePart.split(":") : []).map((v) => parseInt(v, 10))
+    const [year, month, day] = datePart.split("-").map((v) => Number.parseInt(v, 10))
+    const [hour = 0, minute = 0] = (timePart ? timePart.split(":") : []).map((v) => Number.parseInt(v, 10))
 
     // Crear fecha local segura
     const start = new Date(year, month - 1, day, hour || 0, minute || 0, 0, 0)
@@ -79,7 +102,7 @@ const EnhancedAddToCartModal = ({ isOpen, onClose, vehicle, onLoginRequired }) =
 
     // Formatear en string compatible con datetime-local (local time)
     const localDateTime = `${end.getFullYear()}-${pad(end.getMonth() + 1)}-${pad(end.getDate())}T${pad(
-      end.getHours()
+      end.getHours(),
     )}:${pad(end.getMinutes())}`
 
     setEndDateTime(localDateTime)
@@ -99,18 +122,34 @@ const EnhancedAddToCartModal = ({ isOpen, onClose, vehicle, onLoginRequired }) =
   }
 
   const handleAddToCart = async () => {
-    if (!vehicle || !startDateTime || !endDateTime || !selectedStartStation) {
+    if (!vehicle || !startDateTime || !endDateTime || !selectedStartStation || !selectedTransport) {
+      setRentalError("Por favor completa todos los campos requeridos")
       return
     }
 
-    const isLoggedIn = localStorage.getItem("ecomove_user_token")
-    if (!isLoggedIn) {
+    if (!isAuthenticated || !user) {
       onLoginRequired && onLoginRequired()
       return
     }
 
     try {
+      setRentalLoading(true)
+      setRentalError("")
+
+      // Create rental data for PrestamoController
       const rentalData = {
+        usuarioId: user.id,
+        transporteId: selectedTransport,
+        estacionOrigenId: selectedStartStation,
+        fechaInicio: new Date(startDateTime).toISOString(),
+        estado: "activo",
+      }
+
+      // Create the rental using PrestamoController
+      const nuevoPrestamo = PrestamoController.crear(rentalData)
+
+      // Also add to cart context for UI consistency
+      const cartData = {
         vehicleId: vehicle.id,
         vehicleType: vehicle.tipo,
         vehicleName: vehicle.name,
@@ -123,17 +162,23 @@ const EnhancedAddToCartModal = ({ isOpen, onClose, vehicle, onLoginRequired }) =
         basePrice: currentPrice,
         pricePerHour: pricing?.hourly || 0,
         pricePerDay: pricing?.daily || 0,
+        prestamoId: nuevoPrestamo.id,
       }
 
-      await addToCart(vehicle.id, vehicle.tipo, vehicle.name, rentalType, startDateTime, endDateTime, rentalData)
+      await addToCart(vehicle.id, vehicle.tipo, vehicle.name, rentalType, startDateTime, endDateTime, cartData)
 
+      // Show success message and close modal
+      alert(`¡Arrendamiento iniciado exitosamente! ID: ${nuevoPrestamo.id}`)
       onClose()
     } catch (error) {
-      console.error("Error adding to cart:", error)
+      console.error("Error creating rental:", error)
+      setRentalError(error.message || "Error al crear el arrendamiento")
+    } finally {
+      setRentalLoading(false)
     }
   }
 
-  const isFormValid = startDateTime && endDateTime && selectedStartStation && duration > 0
+  const isFormValid = startDateTime && endDateTime && selectedStartStation && selectedTransport && duration > 0
 
   if (!isOpen || !vehicle) return null
 
@@ -170,7 +215,9 @@ const EnhancedAddToCartModal = ({ isOpen, onClose, vehicle, onLoginRequired }) =
               <AlertCircle className="w-6 h-6 text-yellow-600 flex-shrink-0" />
               <div>
                 <p className="text-yellow-800 font-medium">Vehículo no disponible</p>
-                <p className="text-yellow-700 text-sm">{pricing?.message || "Este vehículo no está disponible actualmente"}</p>
+                <p className="text-yellow-700 text-sm">
+                  {pricing?.message || "Este vehículo no está disponible actualmente"}
+                </p>
               </div>
             </div>
           ) : (
@@ -260,7 +307,7 @@ const EnhancedAddToCartModal = ({ isOpen, onClose, vehicle, onLoginRequired }) =
               <div className="space-y-4">
                 <h3 className="text-lg font-semibold text-gray-900 flex items-center space-x-2">
                   <MapPin className="w-5 h-5 text-green-600" />
-                  <span>Estaciones</span>
+                  <span>Estaciones y Vehículo</span>
                 </h3>
 
                 <div className="space-y-4">
@@ -273,19 +320,36 @@ const EnhancedAddToCartModal = ({ isOpen, onClose, vehicle, onLoginRequired }) =
                     >
                       <option value="">Selecciona una estación</option>
                       {stations
-                        .filter((station) => station.available)
+                        .filter((station) => station.activa)
                         .map((station) => (
                           <option key={station.id} value={station.id}>
-                            {station.name} - {station.address} ({station.distance})
+                            {station.nombre} - {station.direccion}
                           </option>
                         ))}
                     </select>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Estación de Devolución
-                    </label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Vehículo Específico</label>
+                    <select
+                      value={selectedTransport}
+                      onChange={(e) => setSelectedTransport(e.target.value)}
+                      className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
+                    >
+                      <option value="">Selecciona un vehículo</option>
+                      {availableTransports.map((transport) => (
+                        <option key={transport.id} value={transport.id}>
+                          {transport.codigo} - {transport.modelo} ({transport.año})
+                        </option>
+                      ))}
+                    </select>
+                    {availableTransports.length === 0 && (
+                      <p className="text-xs text-red-500 mt-1">No hay vehículos de tipo {vehicle.tipo} disponibles</p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Estación de Devolución</label>
                     <select
                       value={selectedEndStation}
                       onChange={(e) => setSelectedEndStation(e.target.value)}
@@ -293,10 +357,10 @@ const EnhancedAddToCartModal = ({ isOpen, onClose, vehicle, onLoginRequired }) =
                     >
                       <option value="">Misma estación de recogida</option>
                       {stations
-                        .filter((station) => station.available)
+                        .filter((station) => station.activa)
                         .map((station) => (
                           <option key={station.id} value={station.id}>
-                            {station.name} - {station.address} ({station.distance})
+                            {station.nombre} - {station.direccion}
                           </option>
                         ))}
                     </select>
@@ -330,10 +394,10 @@ const EnhancedAddToCartModal = ({ isOpen, onClose, vehicle, onLoginRequired }) =
                 </div>
               </div>
 
-              {error && (
+              {(error || rentalError) && (
                 <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-center space-x-3">
                   <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0" />
-                  <p className="text-red-800 text-sm">{error}</p>
+                  <p className="text-red-800 text-sm">{error || rentalError}</p>
                 </div>
               )}
             </>
@@ -351,18 +415,18 @@ const EnhancedAddToCartModal = ({ isOpen, onClose, vehicle, onLoginRequired }) =
             {isAvailable && (
               <button
                 onClick={handleAddToCart}
-                disabled={loading || !isFormValid}
+                disabled={rentalLoading || !isFormValid}
                 className="flex-2 bg-green-600 text-white py-4 px-8 rounded-xl font-semibold hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 hover:scale-105 flex items-center justify-center space-x-2"
               >
-                {loading ? (
+                {rentalLoading ? (
                   <>
                     <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                    <span>Rentando...</span>
+                    <span>Creando arrendamiento...</span>
                   </>
                 ) : (
                   <>
                     <CreditCard className="w-5 h-5" />
-                    <span>Rentar Vehiculo</span>
+                    <span>Iniciar Arrendamiento</span>
                   </>
                 )}
               </button>
@@ -375,4 +439,3 @@ const EnhancedAddToCartModal = ({ isOpen, onClose, vehicle, onLoginRequired }) =
 }
 
 export default EnhancedAddToCartModal
- 

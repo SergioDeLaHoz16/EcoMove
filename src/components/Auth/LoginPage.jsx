@@ -3,14 +3,14 @@
 import { useState } from "react"
 import { Eye, EyeOff } from "lucide-react"
 
-const LoginPage = ({ onClose, onLogin, onSwitchToRegister }) => {
+const LoginPage = ({ onClose, onLogin, onSwitchToRegister, loading, error }) => {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
 
   const handleSubmit = (e) => {
     e.preventDefault()
-    onLogin()
+    onLogin(email, password)
   }
 
   return (
@@ -34,9 +34,28 @@ const LoginPage = ({ onClose, onLogin, onSwitchToRegister }) => {
             <br />
             Pero antes de continuar, necesitamos que por favor inicies
             <br />
-            sesión o create una cuenta
+            sesión o crees una cuenta
           </p>
         </div>
+
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+          <h3 className="font-semibold text-blue-800 mb-2">Credenciales de prueba:</h3>
+          <div className="text-sm text-blue-700 space-y-1">
+            <p>
+              <strong>Usuario:</strong> usuario@ecomove.com / 123456
+            </p>
+            <p>
+              <strong>Admin:</strong> admin@ecomove.com / admin123
+            </p>
+          </div>
+        </div>
+
+        {/* Error message */}
+        {error && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+            <p className="text-red-700 text-sm">{error}</p>
+          </div>
+        )}
 
         {/* Formulario */}
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -48,6 +67,7 @@ const LoginPage = ({ onClose, onLogin, onSwitchToRegister }) => {
               onChange={(e) => setEmail(e.target.value)}
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
               required
+              disabled={loading}
             />
           </div>
 
@@ -60,11 +80,13 @@ const LoginPage = ({ onClose, onLogin, onSwitchToRegister }) => {
                 onChange={(e) => setPassword(e.target.value)}
                 className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                 required
+                disabled={loading}
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
                 className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                disabled={loading}
               >
                 {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
               </button>
@@ -72,19 +94,27 @@ const LoginPage = ({ onClose, onLogin, onSwitchToRegister }) => {
           </div>
 
           <div className="flex justify-between items-center text-sm">
-            <button type="button" className="text-gray-600 hover:text-gray-800">
+            <button type="button" className="text-gray-600 hover:text-gray-800" disabled={loading}>
               ¿Olvidaste tu contraseña?
             </button>
-            <button type="button" className="text-green-600 hover:text-green-700 font-medium">
+            <button type="button" className="text-green-600 hover:text-green-700 font-medium" disabled={loading}>
               Recordar contraseña
             </button>
           </div>
 
           <button
             type="submit"
-            className="w-full bg-green-600 hover:bg-green-700 text-white py-3 rounded-lg font-semibold transition-colors"
+            disabled={loading}
+            className="w-full bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white py-3 rounded-lg font-semibold transition-colors flex items-center justify-center"
           >
-            Iniciar Sesión
+            {loading ? (
+              <>
+                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                Iniciando sesión...
+              </>
+            ) : (
+              "Iniciar Sesión"
+            )}
           </button>
 
           <div className="relative my-6">
@@ -98,7 +128,8 @@ const LoginPage = ({ onClose, onLogin, onSwitchToRegister }) => {
 
           <button
             type="button"
-            className="w-full flex items-center justify-center px-4 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+            disabled={loading}
+            className="w-full flex items-center justify-center px-4 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
           >
             <img src="https://developers.google.com/identity/images/g-logo.png" alt="Google" className="w-5 h-5 mr-3" />
             Iniciar Sesión con Google
@@ -107,12 +138,20 @@ const LoginPage = ({ onClose, onLogin, onSwitchToRegister }) => {
 
         <div className="mt-6 text-center">
           <span className="text-sm text-gray-600">¿No tienes cuenta? </span>
-          <button onClick={onSwitchToRegister} className="text-sm text-green-600 hover:text-green-700 font-medium">
-            Create una cuenta gratis
+          <button
+            onClick={onSwitchToRegister}
+            className="text-sm text-green-600 hover:text-green-700 font-medium"
+            disabled={loading}
+          >
+            Crea una cuenta gratis
           </button>
         </div>
 
-        <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
+          disabled={loading}
+        >
           ✕
         </button>
       </div>

@@ -2,11 +2,14 @@
 
 import { useState, useEffect } from "react"
 import { X, Calendar, Clock, MapPin, AlertCircle, CreditCard } from "lucide-react"
-import { stationService } from "../../services/StationService.js"
-import { authService } from "../../services/AuthService.js"
+import { useAuth } from "../../contexts/AuthContext.jsx"
 import { useRentalPricing } from "../../hooks/useRentalPricing.js"
+import { PrestamoController } from "../../controllers/PrestamoController.js"
+import { EstacionController } from "../../controllers/EstacionController.js"
+import { TransporteController } from "../../controllers/TransporteController.js"
 
 const AdvancedRentalModal = ({ isOpen, onClose, vehicle, onConfirmRental }) => {
+  const { user, isAuthenticated, login, register } = useAuth()
   const [step, setStep] = useState(1) // 1: Details, 2: Auth, 3: Payment
   const [rentalType, setRentalType] = useState("hourly")
   const [startDate, setStartDate] = useState("")
@@ -18,8 +21,9 @@ const AdvancedRentalModal = ({ isOpen, onClose, vehicle, onConfirmRental }) => {
   const [returnStation, setReturnStation] = useState("")
   const [availablePickupStations, setAvailablePickupStations] = useState([])
   const [availableReturnStations, setAvailableReturnStations] = useState([])
-  const [isAuthenticated, setIsAuthenticated] = useState(false)
-  const [authForm, setAuthForm] = useState({ email: "", password: "", name: "", phone: "" })
+  const [availableTransports, setAvailableTransports] = useState([])
+  const [selectedTransport, setSelectedTransport] = useState("")
+  const [authForm, setAuthForm] = useState({ email: "", password: "", nombre: "", apellido: "", telefono: "" })
   const [isLogin, setIsLogin] = useState(true)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
@@ -28,23 +32,32 @@ const AdvancedRentalModal = ({ isOpen, onClose, vehicle, onConfirmRental }) => {
 
   useEffect(() => {
     if (isOpen && vehicle) {
-      // Load available stations
-      const pickupStations = stationService.getStationsWithAvailableVehicle(vehicle.tipo)
-      const returnStations = stationService.getStationsForReturn(vehicle.tipo)
+      try {
+        const allStations = EstacionController.obtenerTodas()
+        const allTransports = TransporteController.obtenerTodos()
 
-      setAvailablePickupStations(pickupStations)
-      setAvailableReturnStations(returnStations)
+        // Filter available transports by vehicle type
+        const filteredTransports = allTransports.filter(
+          (transport) => transport.tipo === vehicle.tipo && transport.estado === "activo",
+        )
 
-      // Set default dates
-      const now = new Date()
-      const tomorrow = new Date(now)
-      tomorrow.setDate(tomorrow.getDate() + 1)
+        setAvailablePickupStations(allStations.filter((s) => s.activa))
+        setAvailableReturnStations(allStations.filter((s) => s.activa))
+        setAvailableTransports(filteredTransports)
 
-      setStartDate(now.toISOString().split("T")[0])
-      setStartTime(now.toTimeString().slice(0, 5))
+        // Set default dates
+        const now = new Date()
+        setStartDate(now.toISOString().split("T")[0])
+        setStartTime(now.toTimeString().slice(0, 5))
 
-      // Check authentication
-      setIsAuthenticated(authService.isUserAuthenticated())
+        // Reset form
+        setStep(1)
+        setError("")
+        setAuthForm({ email: "", password: "", nombre: "", apellido: "", telefono: "" })
+      } catch (error) {
+        console.error("Error loading data:", error)
+        setError("Error cargando datos del sistema")
+      }
     }
   }, [isOpen, vehicle])
 
@@ -77,7 +90,7 @@ const AdvancedRentalModal = ({ isOpen, onClose, vehicle, onConfirmRental }) => {
 
     if (step === 1) {
       // Validate rental details
-      if (!startDate || !startTime || !pickupStation || !returnStation) {
+      if (!startDate || !startTime || !pickupStation || !selectedTransport) {
         setError("Por favor completa todos los campos requeridos")
         return
       }
@@ -88,37 +101,57 @@ const AdvancedRentalModal = ({ isOpen, onClose, vehicle, onConfirmRental }) => {
         setStep(3)
       }
     } else if (step === 2) {
-      // Handle authentication
       setLoading(true)
       try {
         if (isLogin) {
-          await authService.login(authForm.email, authForm.password)
+          await login(authForm.email, authForm.password)
         } else {
-          await authService.register(authForm)
+          await register(authForm)
         }
-        setIsAuthenticated(true)
         setStep(3)
       } catch (err) {
-        setError(err.message)
+        setError(err.message || "Error en la autenticación")
       } finally {
         setLoading(false)
       }
     } else if (step === 3) {
-      // Process rental
-      const rentalData = {
-        vehicle,
-        rentalType,
-        startDateTime: new Date(`${startDate}T${startTime}`),
-        endDateTime: new Date(`${endDate}T${endTime}`),
-        duration,
-        pickupStation: stationService.getStationById(Number.parseInt(pickupStation)),
-        returnStation: stationService.getStationById(Number.parseInt(returnStation)),
-        totalPrice: calculateTotalPrice(),
-        user: authService.getCurrentUser(),
-      }
+      setLoading(true)
+      try {
+        const rentalData = {
+          usuarioId: user.id,
+          transporteId: selectedTransport,
+          estacionOrigenId: pickupStation,
+          fechaInicio: new Date(`${startDate}T${startTime}`).toISOString(),
+          estado: "activo",
+        }
 
-      onConfirmRental(rentalData)
-      onClose()
+        const nuevoPrestamo = PrestamoController.crear(rentalData)
+
+        // Call the parent callback with rental data
+        if (onConfirmRental) {
+          onConfirmRental({
+            prestamo: nuevoPrestamo,
+            vehicle,
+            rentalType,
+            startDateTime: new Date(`${startDate}T${startTime}`),
+            endDateTime: new Date(`${endDate}T${endTime}`),
+            duration,
+            pickupStation: availablePickupStations.find((s) => s.id === Number.parseInt(pickupStation)),
+            returnStation: returnStation
+              ? availableReturnStations.find((s) => s.id === Number.parseInt(returnStation))
+              : null,
+            totalPrice: calculateTotalPrice(),
+            user,
+          })
+        }
+
+        alert(`¡Arrendamiento creado exitosamente! ID: ${nuevoPrestamo.id}`)
+        onClose()
+      } catch (err) {
+        setError(err.message || "Error al crear el arrendamiento")
+      } finally {
+        setLoading(false)
+      }
     }
   }
 
@@ -288,10 +321,29 @@ const AdvancedRentalModal = ({ isOpen, onClose, vehicle, onConfirmRental }) => {
                   <option value="">Selecciona una estación</option>
                   {availablePickupStations.map((station) => (
                     <option key={station.id} value={station.id}>
-                      {station.name} - {station.address} ({station.availableVehicles[vehicle.tipo]} disponibles)
+                      {station.nombre} - {station.direccion}
                     </option>
                   ))}
                 </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-2">Vehículo Específico</label>
+                <select
+                  value={selectedTransport}
+                  onChange={(e) => setSelectedTransport(e.target.value)}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent"
+                >
+                  <option value="">Selecciona un vehículo</option>
+                  {availableTransports.map((transport) => (
+                    <option key={transport.id} value={transport.id}>
+                      {transport.codigo} - {transport.modelo} ({transport.año})
+                    </option>
+                  ))}
+                </select>
+                {availableTransports.length === 0 && (
+                  <p className="text-xs text-red-500 mt-1">No hay vehículos de tipo {vehicle.tipo} disponibles</p>
+                )}
               </div>
 
               {/* Return Station */}
@@ -305,10 +357,10 @@ const AdvancedRentalModal = ({ isOpen, onClose, vehicle, onConfirmRental }) => {
                   onChange={(e) => setReturnStation(e.target.value)}
                   className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent"
                 >
-                  <option value="">Selecciona una estación</option>
+                  <option value="">Misma estación de recogida</option>
                   {availableReturnStations.map((station) => (
                     <option key={station.id} value={station.id}>
-                      {station.name} - {station.address}
+                      {station.nombre} - {station.direccion}
                     </option>
                   ))}
                 </select>
@@ -356,16 +408,30 @@ const AdvancedRentalModal = ({ isOpen, onClose, vehicle, onConfirmRental }) => {
 
               <div className="space-y-4">
                 {!isLogin && (
-                  <div>
-                    <label className="block text-sm font-medium text-foreground mb-2">Nombre Completo</label>
-                    <input
-                      type="text"
-                      value={authForm.name}
-                      onChange={(e) => setAuthForm({ ...authForm, name: e.target.value })}
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent"
-                      placeholder="Tu nombre completo"
-                    />
-                  </div>
+                  <>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-foreground mb-2">Nombre</label>
+                        <input
+                          type="text"
+                          value={authForm.nombre}
+                          onChange={(e) => setAuthForm({ ...authForm, nombre: e.target.value })}
+                          className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent"
+                          placeholder="Tu nombre"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-foreground mb-2">Apellido</label>
+                        <input
+                          type="text"
+                          value={authForm.apellido}
+                          onChange={(e) => setAuthForm({ ...authForm, apellido: e.target.value })}
+                          className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent"
+                          placeholder="Tu apellido"
+                        />
+                      </div>
+                    </div>
+                  </>
                 )}
 
                 <div>
@@ -395,8 +461,8 @@ const AdvancedRentalModal = ({ isOpen, onClose, vehicle, onConfirmRental }) => {
                     <label className="block text-sm font-medium text-foreground mb-2">Teléfono</label>
                     <input
                       type="tel"
-                      value={authForm.phone}
-                      onChange={(e) => setAuthForm({ ...authForm, phone: e.target.value })}
+                      value={authForm.telefono}
+                      onChange={(e) => setAuthForm({ ...authForm, telefono: e.target.value })}
                       className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent"
                       placeholder="+57 300 123 4567"
                     />
@@ -411,8 +477,8 @@ const AdvancedRentalModal = ({ isOpen, onClose, vehicle, onConfirmRental }) => {
             <div className="space-y-6">
               <div className="text-center">
                 <CreditCard className="w-12 h-12 mx-auto mb-4 text-primary" />
-                <h3 className="text-lg font-semibold mb-2">Método de Pago</h3>
-                <p className="text-muted-foreground">Confirma tu alquiler y procede al pago</p>
+                <h3 className="text-lg font-semibold mb-2">Confirmar Arrendamiento</h3>
+                <p className="text-muted-foreground">Revisa los detalles y confirma tu arrendamiento</p>
               </div>
 
               {/* Rental Summary */}
@@ -453,7 +519,7 @@ const AdvancedRentalModal = ({ isOpen, onClose, vehicle, onConfirmRental }) => {
 
               <div className="text-center text-sm text-muted-foreground">
                 <p>Al confirmar, aceptas nuestros términos y condiciones.</p>
-                <p>El pago se procesará de forma segura.</p>
+                <p>El arrendamiento se iniciará automáticamente.</p>
               </div>
             </div>
           )}
@@ -472,7 +538,7 @@ const AdvancedRentalModal = ({ isOpen, onClose, vehicle, onConfirmRental }) => {
             disabled={loading}
             className="px-6 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50"
           >
-            {loading ? "Procesando..." : step === 3 ? "Confirmar Alquiler" : "Siguiente"}
+            {loading ? "Procesando..." : step === 3 ? "Confirmar Arrendamiento" : "Siguiente"}
           </button>
         </div>
       </div>

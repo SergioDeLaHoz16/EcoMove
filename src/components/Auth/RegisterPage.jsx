@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { Eye, EyeOff, ChevronDown } from "lucide-react"
 
-const RegisterPage = ({ onClose, onRegister, onSwitchToLogin }) => {
+const RegisterPage = ({ onClose, onRegister, onSwitchToLogin, loading, error }) => {
   const [formData, setFormData] = useState({
     nombre: "",
     apellido: "",
@@ -15,6 +15,7 @@ const RegisterPage = ({ onClose, onRegister, onSwitchToLogin }) => {
     numeroTelefono: "",
     password: "",
     confirmPassword: "",
+    tipo: "usuario", // Default user type
   })
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
@@ -33,7 +34,7 @@ const RegisterPage = ({ onClose, onRegister, onSwitchToLogin }) => {
       alert("Las contraseñas no coinciden")
       return
     }
-    onRegister()
+    onRegister(formData)
   }
 
   return (
@@ -61,8 +62,16 @@ const RegisterPage = ({ onClose, onRegister, onSwitchToLogin }) => {
           </p>
         </div>
 
+        {/* Error message */}
+        {error && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+            <p className="text-red-700 text-sm">{error}</p>
+          </div>
+        )}
+
         {/* Formulario */}
         <form onSubmit={handleSubmit} className="space-y-4">
+          {/* ... existing form fields ... */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Nombre</label>
@@ -73,6 +82,7 @@ const RegisterPage = ({ onClose, onRegister, onSwitchToLogin }) => {
                 onChange={handleInputChange}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                 required
+                disabled={loading}
               />
             </div>
 
@@ -85,6 +95,7 @@ const RegisterPage = ({ onClose, onRegister, onSwitchToLogin }) => {
                 onChange={handleInputChange}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                 required
+                disabled={loading}
               />
             </div>
           </div>
@@ -99,6 +110,7 @@ const RegisterPage = ({ onClose, onRegister, onSwitchToLogin }) => {
                 onChange={handleInputChange}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                 required
+                disabled={loading}
               />
             </div>
 
@@ -111,6 +123,7 @@ const RegisterPage = ({ onClose, onRegister, onSwitchToLogin }) => {
                 onChange={handleInputChange}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                 required
+                disabled={loading}
               />
             </div>
           </div>
@@ -124,6 +137,7 @@ const RegisterPage = ({ onClose, onRegister, onSwitchToLogin }) => {
                   value={formData.tipoDocumento}
                   onChange={handleInputChange}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent appearance-none"
+                  disabled={loading}
                 >
                   <option value="CC">CC</option>
                   <option value="CE">CE</option>
@@ -143,6 +157,7 @@ const RegisterPage = ({ onClose, onRegister, onSwitchToLogin }) => {
                 onChange={handleInputChange}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                 required
+                disabled={loading}
               />
             </div>
           </div>
@@ -156,6 +171,7 @@ const RegisterPage = ({ onClose, onRegister, onSwitchToLogin }) => {
                   value={formData.pais}
                   onChange={handleInputChange}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent appearance-none"
+                  disabled={loading}
                 >
                   <option value="Colombia">🇨🇴 Colombia</option>
                   <option value="Mexico">🇲🇽 México</option>
@@ -179,6 +195,7 @@ const RegisterPage = ({ onClose, onRegister, onSwitchToLogin }) => {
                   onChange={handleInputChange}
                   className="flex-1 px-4 py-3 border border-gray-300 rounded-r-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                   required
+                  disabled={loading}
                 />
               </div>
             </div>
@@ -195,11 +212,13 @@ const RegisterPage = ({ onClose, onRegister, onSwitchToLogin }) => {
                   onChange={handleInputChange}
                   className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                   required
+                  disabled={loading}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  disabled={loading}
                 >
                   {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
@@ -216,11 +235,13 @@ const RegisterPage = ({ onClose, onRegister, onSwitchToLogin }) => {
                   onChange={handleInputChange}
                   className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                   required
+                  disabled={loading}
                 />
                 <button
                   type="button"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                   className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  disabled={loading}
                 >
                   {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
@@ -233,26 +254,43 @@ const RegisterPage = ({ onClose, onRegister, onSwitchToLogin }) => {
               type="button"
               onClick={onClose}
               className="flex-1 px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+              disabled={loading}
             >
               Cancelar
             </button>
             <button
               type="submit"
-              className="flex-1 px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition-colors"
+              disabled={loading}
+              className="flex-1 px-6 py-3 bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white rounded-lg font-semibold transition-colors flex items-center justify-center"
             >
-              Crear Cuenta
+              {loading ? (
+                <>
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                  Creando cuenta...
+                </>
+              ) : (
+                "Crear Cuenta"
+              )}
             </button>
           </div>
         </form>
 
         <div className="mt-6 text-center">
           <span className="text-sm text-gray-600">¿Ya tienes una cuenta? </span>
-          <button onClick={onSwitchToLogin} className="text-sm text-green-600 hover:text-green-700 font-medium">
+          <button
+            onClick={onSwitchToLogin}
+            className="text-sm text-green-600 hover:text-green-700 font-medium"
+            disabled={loading}
+          >
             Iniciar Sesión
           </button>
         </div>
 
-        <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
+          disabled={loading}
+        >
           ✕
         </button>
       </div>

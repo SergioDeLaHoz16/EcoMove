@@ -2,9 +2,11 @@
 
 import { useState } from "react"
 import { Bell, Settings, LogOut, User, ChevronDown } from "lucide-react"
+import { useAuth } from "../../contexts/AuthContext"
 
 const AdminHeader = ({ onLogout }) => {
   const [showUserMenu, setShowUserMenu] = useState(false)
+  const { user } = useAuth()
 
   return (
     <header className="bg-white shadow-sm border-b border-gray-200 px-6 py-4">
@@ -32,8 +34,10 @@ const AdminHeader = ({ onLogout }) => {
                 <User className="w-4 h-4 text-green-600" />
               </div>
               <div className="text-left">
-                <p className="text-sm font-medium text-gray-900">Administrador</p>
-                <p className="text-xs text-gray-500">admin@ecomove.com</p>
+                <p className="text-sm font-medium text-gray-900">
+                  {user?.nombre} {user?.apellido}
+                </p>
+                <p className="text-xs text-gray-500">{user?.email}</p>
               </div>
               <ChevronDown className="w-4 h-4" />
             </button>

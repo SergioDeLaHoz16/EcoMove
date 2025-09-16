@@ -5,6 +5,32 @@ class AuthService {
     this.subscribers = []
     this.currentUser = null
     this.isAuthenticated = false
+    this.staticUsers = [
+      {
+        id: "user_1",
+        email: "usuario@ecomove.com",
+        password: "123456",
+        nombre: "Juan",
+        apellido: "Pérez",
+        tipo: "usuario",
+        documento: "12345678",
+        telefono: "+57 300 123 4567",
+        fechaRegistro: new Date().toISOString(),
+        activo: true,
+      },
+      {
+        id: "admin_1",
+        email: "admin@ecomove.com",
+        password: "admin123",
+        nombre: "María",
+        apellido: "González",
+        tipo: "administrador",
+        documento: "87654321",
+        telefono: "+57 300 987 6543",
+        fechaRegistro: new Date().toISOString(),
+        activo: true,
+      },
+    ]
     this.init()
   }
 
@@ -49,10 +75,12 @@ class AuthService {
       // Simulate API call delay
       await new Promise((resolve) => setTimeout(resolve, 1000))
 
-      const users = LocalStorageService.loadUsers()
+      let user = this.staticUsers.find((u) => u.email === email && u.password === password)
 
-      // Find user by email and password
-      const user = users.find((u) => u.email === email && u.password === password)
+      if (!user) {
+        const users = LocalStorageService.loadUsers()
+        user = users.find((u) => u.email === email && u.password === password)
+      }
 
       if (!user) {
         throw new Error("Credenciales inválidas")
@@ -65,6 +93,7 @@ class AuthService {
       this.isAuthenticated = true
 
       LocalStorageService.save("currentUser", userWithoutPassword)
+      LocalStorageService.save("ecomove_user_token", userWithoutPassword.id)
 
       // Notify subscribers
       this.notifySubscribers()
@@ -106,6 +135,7 @@ class AuthService {
       this.isAuthenticated = true
 
       LocalStorageService.save("currentUser", userWithoutPassword)
+      LocalStorageService.save("ecomove_user_token", userWithoutPassword.id)
 
       // Notify subscribers
       this.notifySubscribers()
@@ -121,6 +151,7 @@ class AuthService {
     this.isAuthenticated = false
 
     LocalStorageService.remove("currentUser")
+    LocalStorageService.remove("ecomove_user_token")
 
     // Notify subscribers
     this.notifySubscribers()

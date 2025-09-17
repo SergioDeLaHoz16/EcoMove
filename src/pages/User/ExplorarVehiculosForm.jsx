@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import TarifaInfo from "./TarifaInfo.jsx";
+import { useRentalPricing } from "../../hooks/useRentalPricing.js";
 import { PrestamoController } from "../../controllers/PrestamoController.js";
 import { useAuth } from "../../contexts/AuthContext.jsx";
 
@@ -42,8 +43,23 @@ const ExplorarVehiculosForm = ({ transportes, estaciones, onRenta }) => {
 
   // Validación para habilitar el botón
   const modeloObj = transportes.find(m => m.id === modeloSeleccionado);
+  const { pricing, calculatePrice, formatPrice } = useRentalPricing(modeloObj?.tipo);
   const tarifaValida = fechaInicio && fechaFin && fechaFin > fechaInicio && modeloObj;
   const puedeRentar = tipoSeleccionado && modeloSeleccionado && fechaInicio && fechaFin && fechaFin > fechaInicio && estacionOrigen && estacionEntrega;
+
+  // Calcular días de arrendamiento
+  let dias = 0;
+  if (fechaInicio && fechaFin) {
+    const inicio = new Date(fechaInicio);
+    const fin = new Date(fechaFin);
+    dias = Math.max(1, Math.ceil((fin - inicio) / (1000 * 60 * 60 * 24)));
+  }
+
+  // Calcular tarifa total usando PricingService
+  let tarifaTotal = 0;
+  if (modeloObj && dias > 0) {
+    tarifaTotal = calculatePrice("daily", dias);
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -56,7 +72,7 @@ const ExplorarVehiculosForm = ({ transportes, estaciones, onRenta }) => {
         estacionEntregaId: estacionEntrega,
         fechaInicio,
         fechaFin,
-        tarifa: modeloObj.tarifa,
+        tarifa: tarifaTotal,
       });
       setShowToast(true);
       if (typeof onRenta === "function") onRenta();
@@ -159,6 +175,10 @@ const ExplorarVehiculosForm = ({ transportes, estaciones, onRenta }) => {
             modelo={modeloObj}
             fechaInicio={fechaInicio}
             fechaFin={fechaFin}
+            dias={dias}
+            tarifaTotal={tarifaTotal}
+            formatPrice={formatPrice}
+            pricing={pricing}
           />
         )}
         <div>

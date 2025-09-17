@@ -5,7 +5,9 @@ import { Clock, MapPin, Calendar, Euro, Bike, History, User, LogOut, RefreshCw }
 import { PrestamoController } from "../../controllers/PrestamoController.js"
 import { EstacionController } from "../../controllers/EstacionController.js"
 import { TransporteController } from "../../controllers/TransporteController.js"
+
 import { useAuth } from "../../contexts/AuthContext.jsx"
+import ExplorarVehiculosForm from "./ExplorarVehiculosForm.jsx"
 
 const UserDashboard = () => {
   const { user, logout } = useAuth()
@@ -15,6 +17,7 @@ const UserDashboard = () => {
   const [estaciones, setEstaciones] = useState([])
   const [transportes, setTransportes] = useState([])
   const [loading, setLoading] = useState(true)
+  const [mostrarModalRenta, setMostrarModalRenta] = useState(false)
 
   useEffect(() => {
     if (user) {
@@ -42,33 +45,33 @@ const UserDashboard = () => {
     }
   }
 
-  const handleFinalizarPrestamo = async (prestamoId) => {
+  const [finalizarPrestamoId, setFinalizarPrestamoId] = useState(null);
+  const [finalizarEstacionDestino, setFinalizarEstacionDestino] = useState("");
+  const [finalizarError, setFinalizarError] = useState("");
+
+  const handleFinalizarPrestamo = (prestamoId) => {
+    setFinalizarPrestamoId(prestamoId);
+    setFinalizarEstacionDestino("");
+    setFinalizarError("");
+  };
+
+  const submitFinalizarPrestamo = (e) => {
+    e.preventDefault();
+    const prestamo = prestamosActivos.find((p) => p.id === finalizarPrestamoId);
+    const finalEstacionId = finalizarEstacionDestino || prestamo.estacionOrigenId;
+    // Calcular tarifa estimada
+    const inicio = new Date(prestamo.fechaInicio);
+    const ahora = new Date();
+    const minutos = Math.ceil((ahora - inicio) / (1000 * 60));
+    const tarifaEstimada = Math.max(minutos * 0.1, 2.0);
     try {
-      const estacionDestinoId = prompt(
-        "Ingrese el ID de la estación de destino (o deje vacío para usar la misma estación):",
-      )
-
-      // If no destination station provided, use the origin station
-      const prestamo = prestamosActivos.find((p) => p.id === prestamoId)
-      const finalEstacionId = estacionDestinoId || prestamo.estacionOrigenId
-
-      // Calculate estimated tariff (simple calculation for demo)
-      const inicio = new Date(prestamo.fechaInicio)
-      const ahora = new Date()
-      const minutos = Math.ceil((ahora - inicio) / (1000 * 60))
-      const tarifaEstimada = Math.max(minutos * 0.1, 2.0) // €0.10 per minute, minimum €2.00
-
-      PrestamoController.finalizar(prestamoId, finalEstacionId, tarifaEstimada)
-
-      // Reload data to reflect changes
-      cargarDatos()
-
-      alert(`Arrendamiento finalizado exitosamente. Tarifa: €${tarifaEstimada.toFixed(2)}`)
+      PrestamoController.finalizar(finalizarPrestamoId, finalEstacionId, tarifaEstimada);
+      cargarDatos();
+      setFinalizarPrestamoId(null);
     } catch (error) {
-      console.error("Error finalizando préstamo:", error)
-      alert("Error al finalizar el arrendamiento: " + error.message)
+      setFinalizarError("Error al finalizar el arrendamiento: " + error.message);
     }
-  }
+  };
 
   const obtenerNombreEstacion = (estacionId) => {
     const estacion = estaciones.find((e) => e.id === estacionId)
@@ -272,83 +275,144 @@ const UserDashboard = () => {
             {activeTab === "active" && (
               <div>
                 {prestamosActivos.length === 0 ? (
-                  <div className="text-center py-12">
-                    <Bike className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">No tienes arrendamientos activos</h3>
-                    <p className="text-gray-600 mb-6">
-                      Explora nuestros vehículos disponibles y comienza tu próximo viaje ecológico
-                    </p>
-                    <button
-                      onClick={() => window.location.reload()}
-                      className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg font-medium transition-colors"
-                    >
-                      Explorar Vehículos
-                    </button>
-                  </div>
+                  <>
+                    <div className="text-center py-12">
+                      <Bike className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                      <h3 className="text-lg font-medium text-gray-900 mb-2">No tienes arrendamientos activos</h3>
+                      <p className="text-gray-600 mb-6">
+                        Explora nuestros vehículos disponibles y comienza tu próximo viaje ecológico
+                      </p>
+                      <button
+                        onClick={() => setMostrarModalRenta(true)}
+                        className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg font-medium transition-colors"
+                      >
+                        Rentar Vehículo
+                      </button>
+                    </div>
+                    {mostrarModalRenta && (
+                      <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+                        <div className="bg-white rounded-lg shadow-lg p-8 max-w-md w-full relative">
+                          <button
+                            className="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
+                            onClick={() => setMostrarModalRenta(false)}
+                          >✕</button>
+                          <ExplorarVehiculosForm 
+                            transportes={transportes} 
+                            estaciones={estaciones} 
+                            onRenta={() => {
+                              setMostrarModalRenta(false);
+                              cargarDatos();
+                            }}
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </>
                 ) : (
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    {prestamosActivos.map((prestamo) => {
-                      const transporte = obtenerTransporte(prestamo.transporteId)
-
-                      return (
-                        <div
-                          key={prestamo.id}
-                          className="border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow"
-                        >
-                          <div className="flex items-start justify-between mb-4">
-                            <div className="flex items-center space-x-3">
-                              <span className="text-3xl">{getTransporteIcon(prestamo.transporteId)}</span>
-                              <div>
-                                <h3 className="font-semibold text-gray-900">
-                                  {transporte?.codigo || "Código no disponible"}
-                                </h3>
-                                <p className="text-sm text-gray-600 capitalize">
-                                  {transporte?.tipo?.replace("_", " ") || "Tipo no disponible"}
-                                </p>
+                  <>
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                      {prestamosActivos.map((prestamo) => {
+                        const transporte = obtenerTransporte(prestamo.transporteId)
+                        return (
+                          <div
+                            key={prestamo.id}
+                            className="border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow"
+                          >
+                            <div className="flex items-start justify-between mb-4">
+                              <div className="flex items-center space-x-3">
+                                <span className="text-3xl">{getTransporteIcon(prestamo.transporteId)}</span>
+                                <div>
+                                  <h3 className="font-semibold text-gray-900">
+                                    {transporte?.codigo || "Código no disponible"}
+                                  </h3>
+                                  <p className="text-sm text-gray-600 capitalize">
+                                    {transporte?.tipo?.replace("_", " ") || "Tipo no disponible"}
+                                  </p>
+                                </div>
+                              </div>
+                              <div className="flex flex-col space-y-2">
+                                <span
+                                  className={`px-2 py-1 rounded-full text-xs font-medium ${getEstadoColor(prestamo.estado)}`}
+                                >
+                                  En uso
+                                </span>
+                                <button
+                                  onClick={() => handleFinalizarPrestamo(prestamo.id)}
+                                  className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-xs font-medium transition-colors"
+                                >
+                                  Finalizar
+                                </button>
                               </div>
                             </div>
-                            <div className="flex flex-col space-y-2">
-                              <span
-                                className={`px-2 py-1 rounded-full text-xs font-medium ${getEstadoColor(prestamo.estado)}`}
-                              >
-                                En uso
-                              </span>
-                              <button
-                                onClick={() => handleFinalizarPrestamo(prestamo.id)}
-                                className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-xs font-medium transition-colors"
-                              >
-                                Finalizar
-                              </button>
-                            </div>
-                          </div>
 
-                          <div className="space-y-3 text-sm text-gray-600">
-                            <div className="flex items-center space-x-2">
-                              <MapPin className="w-4 h-4" />
-                              <span>Desde: {obtenerNombreEstacion(prestamo.estacionOrigenId)}</span>
+                            <div className="space-y-3 text-sm text-gray-600">
+                              <div className="flex items-center space-x-2">
+                                <MapPin className="w-4 h-4" />
+                                <span>Desde: {obtenerNombreEstacion(prestamo.estacionOrigenId)}</span>
+                              </div>
+                              <div className="flex items-center space-x-2">
+                                <Clock className="w-4 h-4" />
+                                <span>Tiempo transcurrido: {calcularTiempoTranscurrido(prestamo.fechaInicio)}</span>
+                              </div>
+                              <div className="flex items-center space-x-2">
+                                <Calendar className="w-4 h-4" />
+                                <span>Iniciado: {formatearFecha(prestamo.fechaInicio)}</span>
+                              </div>
                             </div>
-                            <div className="flex items-center space-x-2">
-                              <Clock className="w-4 h-4" />
-                              <span>Tiempo transcurrido: {calcularTiempoTranscurrido(prestamo.fechaInicio)}</span>
-                            </div>
-                            <div className="flex items-center space-x-2">
-                              <Calendar className="w-4 h-4" />
-                              <span>Iniciado: {formatearFecha(prestamo.fechaInicio)}</span>
-                            </div>
-                          </div>
 
-                          <div className="mt-4 pt-4 border-t border-gray-100">
-                            <div className="flex items-center justify-between">
-                              <span className="text-sm text-gray-600">Tarifa estimada:</span>
-                              <span className="font-semibold text-green-600">
-                                €{(prestamo.tarifaCalculada || 0).toFixed(2)}
-                              </span>
+                            <div className="mt-4 pt-4 border-t border-gray-100">
+                              <div className="flex items-center justify-between">
+                                <span className="text-sm text-gray-600">Tarifa estimada:</span>
+                                <span className="font-semibold text-green-600">
+                                  €{(prestamo.tarifaCalculada || 0).toFixed(2)}
+                                </span>
+                              </div>
                             </div>
                           </div>
+                        )
+                      })}
+                    </div>
+                    {/* Modal para finalizar/cancelar arrendamiento */}
+                    {finalizarPrestamoId && (
+                      <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+                        <div className="bg-white rounded-lg shadow-lg p-8 max-w-md w-full relative">
+                          <button
+                            className="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
+                            onClick={() => setFinalizarPrestamoId(null)}
+                          >✕</button>
+                          <h3 className="text-lg font-bold mb-4">Finalizar arrendamiento</h3>
+                          <form onSubmit={submitFinalizarPrestamo}>
+                            <div className="mb-3 text-left">
+                              <label className="block text-sm font-medium mb-1">Estación de entrega</label>
+                              <select
+                                className="w-full p-2 rounded border"
+                                value={finalizarEstacionDestino}
+                                onChange={e => setFinalizarEstacionDestino(e.target.value)}
+                              >
+                                <option value="">Selecciona estación</option>
+                                {estaciones.map(est => (
+                                  <option key={est.id} value={est.id}>{est.nombre}</option>
+                                ))}
+                              </select>
+                            </div>
+                            <div className="mb-3 text-left">
+                              <span className="block text-sm font-medium mb-1">Datos del arrendamiento</span>
+                              <ul className="text-xs text-gray-700">
+                                <li><b>Vehículo:</b> {prestamosActivos.find(p => p.id === finalizarPrestamoId)?.codigo}</li>
+                                <li><b>Tipo:</b> {prestamosActivos.find(p => p.id === finalizarPrestamoId)?.tipo}</li>
+                                <li><b>Inicio:</b> {prestamosActivos.find(p => p.id === finalizarPrestamoId)?.fechaInicio}</li>
+                              </ul>
+                            </div>
+                            {finalizarError && <div className="text-red-500 text-xs mb-2">{finalizarError}</div>}
+                            <div className="flex justify-end gap-2 mt-4">
+                              <button type="button" onClick={() => setFinalizarPrestamoId(null)} className="px-4 py-2 rounded bg-gray-200 text-gray-700">Cancelar</button>
+                              <button type="submit" className="px-4 py-2 rounded bg-green-600 text-white">Finalizar</button>
+                            </div>
+                          </form>
                         </div>
-                      )
-                    })}
-                  </div>
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
             )}

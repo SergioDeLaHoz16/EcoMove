@@ -8,7 +8,6 @@ import Header from "../src/components/HomePage/Header"
 import HeroSection from "../src/components/HomePage/HeroSection"
 import FeaturesSection from "../src/components/HomePage/FeaturesSection"
 import CategoriesSection from "../src/components/HomePage/CategorySection"
-import ServicesSection from "../src/components/HomePage/ServicesSection"
 import RentalSection from "../src/components/HomePage/RentalSection"
 import PricingSection from "../src/components/HomePage/PricingSection"
 import { RentalCartProvider } from "../src/contexts/RentalCartContext"
@@ -57,7 +56,7 @@ function AppContent() {
       <Header onLoginClick={handleLoginClick} onRegisterClick={handleRegisterClick} />
       <HeroSection />
       <FeaturesSection />
-      <ServicesSection />
+     
       <RentalSection onLoginRequired={handleLoginRequired} />
       <CategoriesSection />
       <PricingSection />

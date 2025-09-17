@@ -86,7 +86,7 @@ const VehicleCard = ({ vehicle, onAddToCart }) => {
             {isAvailable ? (
               <>
                 <Zap className="w-4 h-4" />
-                <span>{vehicle.featured ? "Rentar Ahora" : "Rectar Ahora"}</span>
+                <span>{vehicle.featured ? "Rentar Ahora" : "Rentar Ahora"}</span>
               </>
             ) : (
               <span>No Disponible</span>

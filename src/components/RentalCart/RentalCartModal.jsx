@@ -111,7 +111,7 @@ const RentalCartModal = ({ isOpen, onClose }) => {
       <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
         <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-hidden">
           <div className="flex items-center justify-between p-6 border-b border-gray-200">
-            <h2 className="text-xl font-bold text-gray-900">Carrito de Alquiler</h2>
+            <h2 className="text-xl font-bold text-gray-900">Alquiler de Vehiculos</h2>
             <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
               <X className="w-6 h-6" />
             </button>
@@ -123,7 +123,7 @@ const RentalCartModal = ({ isOpen, onClose }) => {
                 <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
                   <MapPin className="w-8 h-8 text-gray-400" />
                 </div>
-                <h3 className="text-lg font-medium text-gray-900 mb-2">Tu carrito está vacío</h3>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No tienes vehiculos alquilados</h3>
                 <p className="text-gray-600">Agrega vehículos para comenzar tu alquiler</p>
               </div>
             ) : (

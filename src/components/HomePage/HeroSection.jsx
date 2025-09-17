@@ -52,6 +52,7 @@ const HeroSection = () => {
   }, [])
 
   const currentSlideData = heroSlides[currentSlide]
+  
 
   return (
     <section className="relative bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 overflow-hidden min-h-screen flex items-center">
